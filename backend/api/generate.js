@@ -11,6 +11,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 router.post('/', async (req, res) => {
   const { location, budget, preferences } = req.body;
 
+
+  if (!preferences) {
+    prefermeces = "No specific preferences provided.";
+  }
   // Now you control the prompt format!
   const prompt = `
     You are an expert rental assistant.
