@@ -2,7 +2,7 @@ import express from 'express';  // If using ES modules (ensure "type":"module" i
 // const express = require('express');  // If using CommonJS
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 // Simple middleware to parse JSON bodies (optional)
 app.use(express.json());
