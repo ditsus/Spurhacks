@@ -122,7 +122,6 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
 
   const minPercent = ((budgetRange[0] - minBudget) / (maxBudget - minBudget)) * 100;
   const maxPercent = ((budgetRange[1] - minBudget) / (maxBudget - minBudget)) * 100;
-
   return (
     <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white">
       <div className="absolute inset-0 bg-black/20"></div>
@@ -135,7 +134,6 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
           <p className="text-xl md:text-2xl mb-12 text-blue-100">
             Discover affordable, safe, and convenient rentals near your campus
           </p>
-          
           <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-3xl mx-auto">
             <div className="flex flex-col gap-6">
               <div className="flex flex-col md:flex-row gap-4">
@@ -149,12 +147,15 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                     className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 text-gray-900"
                   />
                 </div>
-                <Button className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-lg font-semibold">
+                <Button
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-lg font-semibold"
+                >
                   <Search className="mr-2 h-5 w-5" />
-                  Search
+                  {loading ? "Searching…" : "Search"}
                 </Button>
               </div>
-              
               {/* Budget Range Slider */}
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center gap-2 mb-3">
@@ -251,16 +252,24 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                   </div>
                 </div>
               </div>
-              
               <div>
                 <Textarea
-                  placeholder="Describe what you're looking for... (e.g., quiet study space, close to campus, pet-friendly, shared kitchen, etc.)"
+                  placeholder="Describe what you're looking for… (e.g., quiet study space, close to campus, pet-friendly, shared kitchen, etc.)"
                   className="text-gray-900 border-gray-200 focus:border-blue-500 resize-none"
                   rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
             </div>
           </div>
+
+          {result && (
+            <div className="mt-6 max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow text-black">
+              <h3 className="font-semibold mb-2">Gemini says:</h3>
+              <p className="whitespace-pre-wrap">{result}</p>
+            </div>
+          )}
 
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
