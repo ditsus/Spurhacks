@@ -27,6 +27,7 @@ router.post('/', async (req, res) => {
     res.json({ text });
 
 
+    console.log("404");
 
 
     /// ERROR HANDLING
