@@ -6,4 +6,4 @@ router.get('/', (req, res) => {
   res.json({ message: 'Test endpoint OK' });
 });
 
-export default router;
+export default router; 
