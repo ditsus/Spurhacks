@@ -17,6 +17,12 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
   const minBudget = 200;
   const maxBudget = 3000;
 
+  const [description, setDescription] = useState("");
+const [loading, setLoading] = useState(false);
+const [geminiResponse, setGeminiResponse] = useState("");
+const [error, setError] = useState("");
+
+
   const getValueFromPosition = useCallback((clientX: number) => {
     if (!sliderRef.current) return minBudget;
     
