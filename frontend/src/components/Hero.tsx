@@ -17,9 +17,42 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
   const minBudget = 200;
   const maxBudget = 3000;
 
+  const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [geminiResponse, setGeminiResponse] = useState("");
+  const [error, setError] = useState("");
+
+  // Gemini call
+  const handleSearch = async () => {
+  setLoading(true);
+  setError("");
+  setGeminiResponse("");
+
+  // Send the raw values, not a prompt
+  const payload = {
+    location: searchQuery,
+    budget: { min: budgetRange[0], max: budgetRange[1] },
+    preferences: description,
+  };
+
+  try {
+    const res = await fetch("http://localhost:3000/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Backend error");
+    const data = await res.json();
+    setGeminiResponse(data.text || JSON.stringify(data));
+  } catch (err) {
+    setError("Could not connect to backend or Gemini.");
+  } finally {
+    setLoading(false);
+  }
+};
+
   const getValueFromPosition = useCallback((clientX: number) => {
     if (!sliderRef.current) return minBudget;
-    
     const rect = sliderRef.current.getBoundingClientRect();
     const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const rawValue = minBudget + percentage * (maxBudget - minBudget);
@@ -38,23 +71,15 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging === null || !sliderRef.current) return;
-
     const newValue = getValueFromPosition(e.clientX);
-    
     setBudgetRange(prev => {
       const newRange = [...prev];
-      
       if (isDragging === 0) {
-        // Dragging min thumb - ensure it doesn't exceed max
         newRange[0] = Math.min(newValue, prev[1]);
       } else {
-        // Dragging max thumb - ensure it doesn't go below min
         newRange[1] = Math.max(newValue, prev[0]);
       }
-      
-      // Update input values to match slider
       setInputValues({ min: newRange[0].toString(), max: newRange[1].toString() });
-      
       return newRange;
     });
   }, [isDragging, getValueFromPosition]);
@@ -63,12 +88,10 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
     setIsDragging(null);
   }, []);
 
-  // Add event listeners when dragging starts
   React.useEffect(() => {
     if (isDragging !== null) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -79,19 +102,15 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
   const handleBudgetChange = (index: number, value: number) => {
     const newRange = [...budgetRange];
     newRange[index] = value;
-    
-    // Ensure min doesn't exceed max and vice versa
     if (index === 0 && value > budgetRange[1]) {
       newRange[1] = value;
     } else if (index === 1 && value < budgetRange[0]) {
       newRange[0] = value;
     }
-    
     updateBudgetRange(newRange);
   };
 
   const handleInputChange = (type: 'min' | 'max', value: string) => {
-    // Allow empty string and numbers only
     if (value === '' || /^\d+$/.test(value)) {
       setInputValues(prev => ({ ...prev, [type]: value }));
     }
@@ -100,25 +119,17 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
   const handleInputBlur = (type: 'min' | 'max') => {
     const value = inputValues[type];
     let numValue = parseInt(value) || (type === 'min' ? minBudget : maxBudget);
-    
-    // Clamp to valid range
     numValue = Math.max(minBudget, Math.min(maxBudget, numValue));
-    
     const newRange = [...budgetRange];
     const index = type === 'min' ? 0 : 1;
     newRange[index] = numValue;
-    
-    // Ensure min doesn't exceed max and vice versa
     if (type === 'min' && numValue > budgetRange[1]) {
       newRange[1] = numValue;
     } else if (type === 'max' && numValue < budgetRange[0]) {
       newRange[0] = numValue;
     }
-    
     updateBudgetRange(newRange);
   };
-
-
 
   const minPercent = ((budgetRange[0] - minBudget) / (maxBudget - minBudget)) * 100;
   const maxPercent = ((budgetRange[1] - minBudget) / (maxBudget - minBudget)) * 100;
@@ -149,9 +160,13 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                     className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 text-gray-900"
                   />
                 </div>
-                <Button className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-lg font-semibold">
+                <Button
+                  className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-lg font-semibold"
+                  onClick={handleSearch}
+                  disabled={loading}
+                >
                   <Search className="mr-2 h-5 w-5" />
-                  Search
+                  {loading ? "Searching..." : "Search"}
                 </Button>
               </div>
               
@@ -161,29 +176,25 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                   <DollarSign className="h-5 w-5 text-gray-600" />
                   <label className="text-gray-700 font-medium">Monthly Budget Range</label>
                 </div>
-                
                 <div className="space-y-4">
                   <div className="relative h-2 mx-6" ref={sliderRef}>
                     {/* Background track */}
                     <div className="absolute inset-0 h-2 rounded-full bg-gray-300"></div>
-                    
                     {/* Active range bar */}
-                    <div 
+                    <div
                       className="absolute h-2 bg-blue-600 rounded-full transition-all duration-75"
-                      style={{ 
+                      style={{
                         left: `${minPercent}%`,
                         width: `${maxPercent - minPercent}%`
                       }}
                     ></div>
-                    
                     {/* Clickable overlay */}
-                    <div 
+                    <div
                       className="absolute inset-0 h-2 cursor-pointer"
                       onClick={(e) => {
                         const newValue = getValueFromPosition(e.clientX);
                         const distanceToMin = Math.abs(newValue - budgetRange[0]);
                         const distanceToMax = Math.abs(newValue - budgetRange[1]);
-                        
                         if (distanceToMin < distanceToMax) {
                           handleBudgetChange(0, newValue);
                         } else {
@@ -191,32 +202,29 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                         }
                       }}
                     ></div>
-                    
                     {/* Min thumb */}
-                    <div 
+                    <div
                       className={`absolute w-6 h-6 bg-blue-600 rounded-full shadow-lg border-2 border-white cursor-grab transform -translate-y-2 -translate-x-3 transition-all duration-75 hover:scale-110 ${
                         isDragging === 0 ? 'cursor-grabbing scale-110 shadow-xl z-30' : budgetRange[0] === budgetRange[1] ? 'z-20' : 'z-10'
                       }`}
-                      style={{ 
+                      style={{
                         left: `${minPercent}%`,
                         transform: `translateY(-8px) translateX(${budgetRange[0] === budgetRange[1] ? '-18px' : '-12px'})`
                       }}
                       onMouseDown={handleMouseDown(0)}
                     ></div>
-                    
                     {/* Max thumb */}
-                    <div 
+                    <div
                       className={`absolute w-6 h-6 bg-blue-600 rounded-full shadow-lg border-2 border-white cursor-grab transform -translate-y-2 -translate-x-3 transition-all duration-75 hover:scale-110 ${
                         isDragging === 1 ? 'cursor-grabbing scale-110 shadow-xl z-30' : budgetRange[0] === budgetRange[1] ? 'z-20' : 'z-10'
                       }`}
-                      style={{ 
+                      style={{
                         left: `${maxPercent}%`,
                         transform: `translateY(-8px) translateX(${budgetRange[0] === budgetRange[1] ? '-6px' : '-12px'})`
                       }}
                       onMouseDown={handleMouseDown(1)}
                     ></div>
                   </div>
-                  
                   <div className="flex justify-between items-center gap-4">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">Min:</span>
@@ -257,18 +265,31 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                   </div>
                 </div>
               </div>
-              
               <div>
                 <Textarea
                   placeholder="Describe what you're looking for... (e.g., quiet study space, close to campus, pet-friendly, shared kitchen, etc.)"
                   className="text-gray-900 border-gray-200 focus:border-blue-500 resize-none"
                   rows={3}
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
                 />
               </div>
             </div>
           </div>
 
-          
+          {/* Gemini Response */}
+          {geminiResponse && (
+            <div className="mt-8 max-w-3xl mx-auto bg-white/90 rounded-xl p-6 shadow-xl text-gray-800">
+              <h2 className="font-bold text-lg mb-2 text-blue-700">Gemini Suggestions</h2>
+              <pre className="whitespace-pre-wrap">{geminiResponse}</pre>
+            </div>
+          )}
+          {error && (
+            <div className="mt-4 max-w-3xl mx-auto bg-red-100 rounded-xl p-4 shadow text-red-700">
+              {error}
+            </div>
+          )}
+
         </div>
       </div>
     </div>
