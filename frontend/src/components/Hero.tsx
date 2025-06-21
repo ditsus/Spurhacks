@@ -268,20 +268,7 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
             </div>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="text-3xl font-bold text-yellow-400">10,000+</div>
-              <div className="text-blue-100">Verified Properties</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-yellow-400">500+</div>
-              <div className="text-blue-100">Partner Universities</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-yellow-400">50,000+</div>
-              <div className="text-blue-100">Happy Students</div>
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>

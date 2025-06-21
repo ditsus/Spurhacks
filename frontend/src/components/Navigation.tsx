@@ -13,7 +13,7 @@ const Navigation = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Home className="h-8 w-8 text-blue-600 mr-2" />
-            <span className="text-xl font-bold text-gray-900">StudentRentals</span>
+            <span className="text-xl font-bold text-gray-900">Housely</span>
           </div>
 
           {/* Desktop Navigation */}
