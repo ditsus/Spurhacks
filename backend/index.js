@@ -1,23 +1,32 @@
-import express from 'express';  // If using ES modules (ensure "type":"module" in package.json)
-// const express = require('express');  // If using CommonJS
+import express from 'express';
+import fs      from 'fs';
+import path    from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+
+dotenv.config();
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
-
-// Simple middleware to parse JSON bodies (optional)
 app.use(express.json());
 
-// Define a “health check” or root endpoint
-app.get('/', (req, res) => {
-  res.send('Hello, World!');
+const apiDir = path.join(__dirname, 'api');
+for (const file of fs.readdirSync(apiDir).filter(f => f.endsWith('.js'))) {
+  const { default: router } = await import(`./api/${file}`);
+  const name = path.basename(file, '.js');
+  app.use(`/api/${name}`, router);
+}
+
+app.get('/api/health', (_req, res) => res.json({ status: 'OK' }));
+app.use((_req, res)   => res.status(404).json({ error: 'Not found' }));
+app.use((err, _req, res) => {
+  console.error(err);
+  res.status(500).json({ error: 'Server error' });
 });
 
-// Example API endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK' });
-});
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Express server listening on http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Listening on http://localhost:${PORT}`));
