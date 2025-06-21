@@ -36,7 +36,7 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
   };
 
   try {
-    const res = await fetch("/generate", {
+    const res = await fetch("https://spurhacks-ashj.vercel.app/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
