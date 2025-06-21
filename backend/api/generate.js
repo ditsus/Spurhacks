@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// app.use(cors({ origin: 'http://localhost:8080' }));
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 router.post('/', async (req, res) => {
