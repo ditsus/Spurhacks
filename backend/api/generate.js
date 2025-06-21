@@ -15,11 +15,10 @@ router.post('/', async (req, res) => {
   const prompt = `
     You are an expert rental assistant.
     Recommend student rental options or tips.
-    Location: bye
-    Budget: $50 to $100 per month.
-    Preferences: hi
+    Location: ${location}
+    Budget: $${budget.min} to $${budget.max} per month.
+    Preferences: ${preferences}
     Provide a finished, friendly, and helpful answer.
-    Do not end your answer with ellipses (...).
   `;
 
   try {
