@@ -12,6 +12,7 @@ interface HeroProps {
 const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
   const [budgetRange, setBudgetRange] = useState([500, 1500]);
   const [isDragging, setIsDragging] = useState<number | null>(null);
+  const [inputValues, setInputValues] = useState({ min: '500', max: '1500' });
   const sliderRef = useRef<HTMLDivElement>(null);
   const minBudget = 200;
   const maxBudget = 3000;
@@ -24,6 +25,11 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
     const rawValue = minBudget + percentage * (maxBudget - minBudget);
     return Math.round(rawValue / 50) * 50; // Round to nearest 50
   }, [minBudget, maxBudget]);
+
+  const updateBudgetRange = useCallback((newRange: number[]) => {
+    setBudgetRange(newRange);
+    setInputValues({ min: newRange[0].toString(), max: newRange[1].toString() });
+  }, []);
 
   const handleMouseDown = (thumbIndex: number) => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -45,6 +51,9 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
         // Dragging max thumb - ensure it doesn't go below min
         newRange[1] = Math.max(newValue, prev[0]);
       }
+      
+      // Update input values to match slider
+      setInputValues({ min: newRange[0].toString(), max: newRange[1].toString() });
       
       return newRange;
     });
@@ -78,14 +87,38 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
       newRange[0] = value;
     }
     
-    setBudgetRange(newRange);
+    updateBudgetRange(newRange);
   };
 
-  const getSliderBackground = () => {
-    const minPercent = ((budgetRange[0] - minBudget) / (maxBudget - minBudget)) * 100;
-    const maxPercent = ((budgetRange[1] - minBudget) / (maxBudget - minBudget)) * 100;
-    return `linear-gradient(to right, #e5e7eb 0%, #e5e7eb ${minPercent}%, #3b82f6 ${minPercent}%, #3b82f6 ${maxPercent}%, #e5e7eb ${maxPercent}%, #e5e7eb 100%)`;
+  const handleInputChange = (type: 'min' | 'max', value: string) => {
+    // Allow empty string and numbers only
+    if (value === '' || /^\d+$/.test(value)) {
+      setInputValues(prev => ({ ...prev, [type]: value }));
+    }
   };
+
+  const handleInputBlur = (type: 'min' | 'max') => {
+    const value = inputValues[type];
+    let numValue = parseInt(value) || (type === 'min' ? minBudget : maxBudget);
+    
+    // Clamp to valid range
+    numValue = Math.max(minBudget, Math.min(maxBudget, numValue));
+    
+    const newRange = [...budgetRange];
+    const index = type === 'min' ? 0 : 1;
+    newRange[index] = numValue;
+    
+    // Ensure min doesn't exceed max and vice versa
+    if (type === 'min' && numValue > budgetRange[1]) {
+      newRange[1] = numValue;
+    } else if (type === 'max' && numValue < budgetRange[0]) {
+      newRange[0] = numValue;
+    }
+    
+    updateBudgetRange(newRange);
+  };
+
+
 
   const minPercent = ((budgetRange[0] - minBudget) / (maxBudget - minBudget)) * 100;
   const maxPercent = ((budgetRange[1] - minBudget) / (maxBudget - minBudget)) * 100;
@@ -113,7 +146,7 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                     placeholder="Enter city, university, or neighborhood..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500"
+                    className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 text-gray-900"
                   />
                 </div>
                 <Button className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-lg font-semibold">
@@ -178,18 +211,42 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                     ></div>
                   </div>
                   
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center gap-4">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">Min:</span>
-                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                        ${budgetRange[0]}
-                      </span>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-800 text-sm font-medium z-10">$</span>
+                        <Input
+                          type="text"
+                          value={inputValues.min}
+                          onChange={(e) => handleInputChange('min', e.target.value)}
+                          onBlur={() => handleInputBlur('min')}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleInputBlur('min');
+                            }
+                          }}
+                          className="bg-blue-100 text-blue-800 pl-6 pr-3 py-1 rounded-full text-sm font-semibold w-20 h-8 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white border-0"
+                        />
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">Max:</span>
-                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                        ${budgetRange[1]}
-                      </span>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-800 text-sm font-medium z-10">$</span>
+                        <Input
+                          type="text"
+                          value={inputValues.max}
+                          onChange={(e) => handleInputChange('max', e.target.value)}
+                          onBlur={() => handleInputBlur('max')}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleInputBlur('max');
+                            }
+                          }}
+                          className="bg-blue-100 text-blue-800 pl-6 pr-3 py-1 rounded-full text-sm font-semibold w-20 h-8 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white border-0"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
