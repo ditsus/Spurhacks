@@ -20,19 +20,24 @@ app.get('/api/health', (req, res) => res.json({ status: 'OK' }));
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.post('/api/generate', async (req, res) => {
-  try {
-    const prompt = req.body.prompt;
-    if (!prompt) {
-      return res.status(400).json({ error: 'No prompt provided' });
-    }
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-console.log("==== FULL GEMINI RESPONSE START ====");
-console.dir(result, { depth: null });
-console.log("==== FULL GEMINI RESPONSE END ====");
+  const { location, budget, preferences } = req.body;
 
-      res.json({ text });
+  // Now you control the prompt format!
+  const prompt = `
+    You are an expert rental assistant.
+    Recommend student rental options or tips.
+    Location: ${location}
+    Budget: $${budget.min} to $${budget.max} per month.
+    Preferences: ${preferences}
+    Provide a finished, friendly, and helpful answer.
+    Do not end your answer with ellipses (...).
+  `;
+
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    res.json({ text });
   } catch (err) {
     // Super verbose error logging
     console.error("======== GEMINI ERROR START ========");

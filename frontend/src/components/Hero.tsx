@@ -24,32 +24,32 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
 
   // Gemini call
   const handleSearch = async () => {
-    setLoading(true);
-    setError("");
-    setGeminiResponse("");
-    const prompt = `
-      Find student rental recommendations for the following:
-      Location: ${searchQuery}
-      Budget: $${budgetRange[0]} - $${budgetRange[1]} per month
-      Preferences: ${description}
-      Please reply with a finished answer and do not end your response with ellipses (...).
-    `;
+  setLoading(true);
+  setError("");
+  setGeminiResponse("");
 
-    try {
-      const res = await fetch("http://localhost:3000/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-      if (!res.ok) throw new Error("Backend error");
-      const data = await res.json();
-      setGeminiResponse(data.text || JSON.stringify(data));
-    } catch (err) {
-      setError("Could not connect to backend or Gemini.");
-    } finally {
-      setLoading(false);
-    }
+  // Send the raw values, not a prompt
+  const payload = {
+    location: searchQuery,
+    budget: { min: budgetRange[0], max: budgetRange[1] },
+    preferences: description,
   };
+
+  try {
+    const res = await fetch("http://localhost:3000/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Backend error");
+    const data = await res.json();
+    setGeminiResponse(data.text || JSON.stringify(data));
+  } catch (err) {
+    setError("Could not connect to backend or Gemini.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getValueFromPosition = useCallback((clientX: number) => {
     if (!sliderRef.current) return minBudget;
