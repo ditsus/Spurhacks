@@ -16,7 +16,7 @@ const __dirname  = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-app.use(cors({ origin: 'http://localhost:8080' }));
+app.use(cors({ origin: 'https://www.housesnear.us/' }));
 
 const apiDir = path.join(__dirname, 'api');
 for (const file of fs.readdirSync(apiDir).filter(f => f.endsWith('.js'))) {
