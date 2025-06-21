@@ -87,7 +87,7 @@ const App = () => {
     // In a real app, this would use your router (React Router, Next.js, etc.)
     // For example with React Router: navigate('/login')
     // For now, we'll simulate navigation with window.location
-    window.location.href = '/Login';
+    window.location.href = '/login';
   };
 
   return (
