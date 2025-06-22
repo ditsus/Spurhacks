@@ -61,7 +61,7 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
       budget: { min: budgetRange[0], max: budgetRange[1] },
       preferences: description,
     };
-
+//
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
