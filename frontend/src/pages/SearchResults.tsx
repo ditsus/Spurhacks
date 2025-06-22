@@ -35,16 +35,37 @@ interface HousingResult {
   };
 }
 
+// Skeleton component for loading states
+const PropertySkeleton = ({ index }: { index: number }) => (
+  <Card className="h-full animate-pulse">
+    <div className="aspect-video bg-gray-200 rounded-t-lg skeleton-pulse"></div>
+    <CardContent className="p-4">
+      <div className="h-4 bg-gray-200 rounded mb-2 skeleton-pulse"></div>
+      <div className="h-3 bg-gray-200 rounded mb-4 w-3/4 skeleton-pulse"></div>
+      <div className="flex space-x-2 mb-3">
+        <div className="h-6 bg-gray-200 rounded w-16 skeleton-pulse"></div>
+        <div className="h-6 bg-gray-200 rounded w-16 skeleton-pulse"></div>
+      </div>
+      <div className="h-3 bg-gray-200 rounded mb-2 skeleton-pulse"></div>
+      <div className="h-3 bg-gray-200 rounded mb-4 w-2/3 skeleton-pulse"></div>
+      <div className="h-10 bg-gray-200 rounded skeleton-pulse"></div>
+    </CardContent>
+  </Card>
+);
+
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [results, setResults] = useState<HousingResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<HousingResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState("Initializing search...");
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [usingCache, setUsingCache] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
 
   const [filters, setFilters] = useState({
     priceRange: [0, 2000],
@@ -56,10 +77,101 @@ const SearchResults = () => {
 
   const resultsPerPage = 9;
 
+  // Progressive loading function
+  const processResultsProgressively = (rawResults: any[]) => {
+    setIsStreaming(true);
+    setResults([]);
+    setFilteredResults([]);
+    
+    const validResults = rawResults.filter((result: any) => 
+      result && result.title && result.link
+    );
+
+    // Process results in batches with delays for smooth animation
+    const batchSize = 2; // Show 2 properties at a time
+    const delay = 300; // 300ms between batches
+
+    validResults.forEach((result: any, index: number) => {
+      setTimeout(() => {
+        const processedResult = processResult(result, index);
+        
+        setResults(prev => {
+          const newResults = [...prev, processedResult];
+          setLoadingProgress(((index + 1) / validResults.length) * 100);
+          return newResults;
+        });
+        
+        setFilteredResults(prev => {
+          const newResults = [...prev, processedResult];
+          return newResults;
+        });
+
+        // Update loading message
+        if (index < validResults.length - 1) {
+          setLoadingMessage(`Found ${index + 1} of ${validResults.length} properties...`);
+        } else {
+          setLoadingMessage("Finalizing results...");
+          setTimeout(() => {
+            setIsStreaming(false);
+            setLoading(false);
+          }, 800); // Slightly longer delay at the end
+        }
+      }, (index * delay) / batchSize);
+    });
+  };
+
+  // Process individual result
+  const processResult = (result: any, index: number) => {
+    const title = result.title.toLowerCase();
+    let propertyType = 'apartment';
+    if (title.includes('house') || title.includes('home')) {
+      propertyType = 'house';
+    } else if (title.includes('studio')) {
+      propertyType = 'studio';
+    } else if (title.includes('shared') || title.includes('room')) {
+      propertyType = 'shared';
+    }
+
+    const aiScores = {
+      transit: Math.floor(Math.random() * 4) + 7,
+      quietness: Math.floor(Math.random() * 4) + 6,
+      location: Math.floor(Math.random() * 4) + 7,
+      safety: Math.floor(Math.random() * 3) + 7,
+      value: Math.floor(Math.random() * 4) + 6,
+    };
+
+    return {
+      id: result.id || `result-${index}`,
+      title: result.title || "Unknown Property",
+      link: result.link || "#",
+      justification: result.justification || "",
+      Price: result.Price || "N/A",
+      "Min price": result["Min price"] || "N/A",
+      "Max price": result["Max price"] || "N/A",
+      "Length of stay": result["Length of stay"] || "Unknown",
+      Location: result.Location || [0, 0],
+      Beds: result.Beds || "N/A",
+      Baths: result.Baths || "N/A",
+      "Available from": result["Available from"] || "Unknown",
+      Amenities: Array.isArray(result.Amenities) ? result.Amenities : [],
+      "Reason for recommendation": result["Reason for recommendation"] || "",
+      Images: result.Images || [],
+      postalCode: `K${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))} ${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 9) + 1}`,
+      propertyType,
+      aiScores
+    };
+  };
+
   useEffect(() => {
     const parseApiResponse = async () => {
       try {
         setLoading(true);
+        setLoadingProgress(0);
+        setLoadingMessage("Checking for cached results...");
+        
+        // Show skeleton loading immediately
+        setIsStreaming(true);
+        
         const location = searchParams.get('location');
         const minBudget = searchParams.get('minBudget');
         const maxBudget = searchParams.get('maxBudget');
@@ -78,51 +190,113 @@ const SearchResults = () => {
               const cacheAge = Date.now() - parsed.timestamp;
               const maxCacheAge = 30 * 60 * 1000; // 30 minutes
               
-              // Use cached data if it's less than 30 minutes old
               if (cacheAge < maxCacheAge) {
                 data = { text: parsed.results };
                 shouldMakeApiCall = false;
                 console.log('Using cached search results');
                 setUsingCache(true);
+                setLoadingMessage("Loading cached results...");
               } else {
-                // Remove expired cache
                 localStorage.removeItem(searchKey);
               }
             } catch (err) {
               console.error('Error parsing cached data:', err);
               localStorage.removeItem(searchKey);
             }
-          } else {
-            // No searchKey provided (e.g., bookmarked URL), will make new API call
-            console.log('No searchKey found, will make new API call');
           }
         }
 
         // Make API call if no valid cache exists
         if (shouldMakeApiCall) {
+          setLoadingMessage("Connecting to search service...");
           console.log('Making new API call for search results');
-          const response = await fetch('https://spurhacks-ashj.vercel.app/api/generate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              location,
-              budget: {
-                min: minBudget ? parseInt(minBudget) : undefined,
-                max: maxBudget ? parseInt(maxBudget) : undefined,
+          
+          // Try streaming endpoint first for better performance
+          try {
+            const response = await fetch('https://spurhacks-ashj.vercel.app/api/generate/stream', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
               },
-              preferences,
-            }),
-          });
+              body: JSON.stringify({
+                location,
+                budget: {
+                  min: minBudget ? parseInt(minBudget) : undefined,
+                  max: maxBudget ? parseInt(maxBudget) : undefined,
+                },
+                preferences,
+              }),
+            });
 
-          if (!response.ok) {
-            throw new Error('Failed to fetch search results');
+            if (!response.ok) {
+              throw new Error('Streaming endpoint failed, falling back to regular endpoint');
+            }
+
+            const reader = response.body?.getReader();
+            if (!reader) {
+              throw new Error('No reader available');
+            }
+
+            let streamData = '';
+            
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              
+              streamData += new TextDecoder().decode(value);
+              const lines = streamData.split('\n');
+              
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  try {
+                    const eventData = JSON.parse(line.slice(6));
+                    
+                    if (eventData.status === 'processing') {
+                      setLoadingMessage(eventData.message);
+                    } else if (eventData.status === 'complete') {
+                      data = { text: eventData.text };
+                      break;
+                    } else if (eventData.error) {
+                      throw new Error(eventData.error);
+                    }
+                  } catch (parseError) {
+                    console.log('Non-JSON line:', line);
+                  }
+                }
+              }
+            }
+            
+            reader.releaseLock();
+            
+          } catch (streamError) {
+            console.log('Streaming failed, using regular endpoint:', streamError);
+            
+            // Fallback to regular endpoint
+            const response = await fetch('https://spurhacks-ashj.vercel.app/api/generate', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                location,
+                budget: {
+                  min: minBudget ? parseInt(minBudget) : undefined,
+                  max: maxBudget ? parseInt(maxBudget) : undefined,
+                },
+                preferences,
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to fetch search results');
+            }
+
+            setLoadingMessage("Processing search results...");
+            data = await response.json();
           }
-
-          data = await response.json();
         }
 
+        setLoadingMessage("Analyzing properties...");
         let parsedResults;
 
         // Try to extract JSON from the response
@@ -133,54 +307,22 @@ const SearchResults = () => {
           throw new Error("Could not parse API response");
         }
 
-        // Validate and clean the results
-        const validResults = parsedResults.filter((result: any) => 
-          result && result.title && result.link
-        ).map((result: any, index: number) => {
-          // Determine property type from title
-          const title = result.title.toLowerCase();
-          let propertyType = 'apartment';
-          if (title.includes('house') || title.includes('home')) {
-            propertyType = 'house';
-          } else if (title.includes('studio')) {
-            propertyType = 'studio';
-          } else if (title.includes('shared') || title.includes('room')) {
-            propertyType = 'shared';
-          }
+        // Cache the results if we have a searchKey
+        if (searchKey && shouldMakeApiCall) {
+          localStorage.setItem(searchKey, JSON.stringify({
+            results: data.text,
+            timestamp: Date.now(),
+            searchParams: {
+              location,
+              minBudget: minBudget ? parseInt(minBudget) : undefined,
+              maxBudget: maxBudget ? parseInt(maxBudget) : undefined,
+              preferences
+            }
+          }));
+        }
 
-          // Generate AI scores (simulated for now)
-          const aiScores = {
-            transit: Math.floor(Math.random() * 4) + 7, // 7-10
-            quietness: Math.floor(Math.random() * 4) + 6, // 6-10
-            location: Math.floor(Math.random() * 4) + 7, // 7-10
-            safety: Math.floor(Math.random() * 3) + 7, // 7-10
-            value: Math.floor(Math.random() * 4) + 6, // 6-10
-          };
-
-          return {
-            id: result.id || `result-${index}`,
-            title: result.title || "Unknown Property",
-            link: result.link || "#",
-            justification: result.justification || "",
-            Price: result.Price || "N/A",
-            "Min price": result["Min price"] || "N/A",
-            "Max price": result["Max price"] || "N/A",
-            "Length of stay": result["Length of stay"] || "Unknown",
-            Location: result.Location || [0, 0],
-            Beds: result.Beds || "N/A",
-            Baths: result.Baths || "N/A",
-            "Available from": result["Available from"] || "Unknown",
-            Amenities: Array.isArray(result.Amenities) ? result.Amenities : [],
-            "Reason for recommendation": result["Reason for recommendation"] || "",
-            Images: result.Images || [],
-            postalCode: `K${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))} ${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 9) + 1}`,
-            propertyType,
-            aiScores
-          };
-        });
-
-        setResults(validResults);
-        setFilteredResults(validResults);
+        // Process results progressively
+        processResultsProgressively(parsedResults);
         
         // Set initial price range from search parameters
         if (minBudget && maxBudget) {
@@ -193,15 +335,15 @@ const SearchResults = () => {
       } catch (err) {
         console.error("Error parsing API response:", err);
         setError("Failed to parse search results");
-      } finally {
         setLoading(false);
+        setIsStreaming(false);
       }
+
+      // Cleanup function to remove old search data (older than 1 hour)
+      cleanupOldSearches();
     };
 
     parseApiResponse();
-
-    // Cleanup function to remove old search data (older than 1 hour)
-    cleanupOldSearches();
   }, [searchParams]);
 
   // Apply filters when filters change
@@ -429,17 +571,47 @@ const SearchResults = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">
-            {usingCache ? 'Loading Cached Results' : 'Processing Search Results'}
+        <div className="text-center max-w-md mx-auto">
+          <div className="relative mb-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+            {isStreaming && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-8 h-8 bg-green-500 rounded-full animate-pulse"></div>
+              </div>
+            )}
+          </div>
+          
+          <h2 className="text-xl font-semibold text-gray-700 mb-3">
+            {usingCache ? 'Loading Cached Results' : 'Finding Your Perfect Home'}
           </h2>
-          <p className="text-gray-500">
+          
+          <p className="text-gray-600 mb-4">
+            {loadingMessage}
+          </p>
+          
+          {/* Progress bar */}
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+            <div 
+              className="h-2 rounded-full transition-all duration-300 ease-out progress-bar"
+              style={{ width: `${loadingProgress}%` }}
+            ></div>
+          </div>
+          
+          <p className="text-sm text-gray-500">
             {usingCache 
               ? 'Retrieving your previous search results...' 
               : `Analyzing housing options in ${location}...`
             }
           </p>
+          
+          {/* Show skeleton cards while streaming */}
+          {isStreaming && (
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {[...Array(6)].map((_, index) => (
+                <PropertySkeleton key={index} index={index} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -530,9 +702,32 @@ const SearchResults = () => {
           </div>
         ) : (
           <>
+            {/* Loading indicator for streaming */}
+            {isStreaming && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-blue-700 font-medium">{loadingMessage}</span>
+                  <div className="w-32 bg-blue-200 rounded-full h-2">
+                    <div 
+                      className="h-2 rounded-full transition-all duration-300 ease-out progress-bar"
+                      style={{ width: `${loadingProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {currentResults.map((result) => (
-                <Card key={result.id} className="overflow-hidden card-hover flex flex-col h-full group">
+              {currentResults.map((result, index) => (
+                <Card 
+                  key={result.id} 
+                  className="overflow-hidden card-hover flex flex-col h-full group animate-fade-in"
+                  style={{
+                    animationDelay: `${index * 100}ms`,
+                    animationFillMode: 'both'
+                  }}
+                >
                   {/* Image Section */}
                   <div className="relative h-48 bg-gray-200 overflow-hidden">
                     {result.Images && result.Images.length > 0 ? (
@@ -557,12 +752,14 @@ const SearchResults = () => {
                         </div>
                       </div>
                     )}
-                    {/* Image count badge */}
+                    
+                    {/* Multiple images indicator */}
                     {result.Images && result.Images.length > 1 && (
                       <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
                         +{result.Images.length - 1} more
                       </div>
                     )}
+                    
                     {/* Favorite button overlay */}
                     <Button
                       variant="ghost"
@@ -574,6 +771,7 @@ const SearchResults = () => {
                     >
                       <Heart className={`w-4 h-4 ${favorites.has(result.id) ? 'fill-current' : ''}`} />
                     </Button>
+                    
                     {/* Property type badge */}
                     <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center">
                       {getPropertyTypeIcon(result.propertyType || 'apartment')}
@@ -581,50 +779,38 @@ const SearchResults = () => {
                     </div>
                   </div>
 
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg font-semibold text-gray-900 mb-1">
-                          {result.title}
-                        </CardTitle>
-                        <div className="flex items-center text-gray-600 text-sm mb-2">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {result.postalCode || 'Postal code unavailable'}
-                        </div>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <div className="flex items-center">
-                            <Bed className="w-4 h-4 mr-1" />
-                            {result.Beds}
-                          </div>
-                          <div className="flex items-center">
-                            <Bath className="w-4 h-4 mr-1" />
-                            {result.Baths}
-                          </div>
-                        </div>
-                      </div>
+                  <CardContent className="p-4 flex flex-col flex-grow">
+                    <div className="mb-3">
+                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                        {result.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2 flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {result.postalCode}
+                      </p>
                     </div>
-                  </CardHeader>
-                  
-                  <CardContent className="pt-0 flex-1 flex flex-col">
+
                     <div className="flex items-center justify-between mb-3">
                       <div className="text-2xl font-bold text-blue-600">
                         {result.Price}
-                        <span className="text-sm font-normal text-gray-500">/month</span>
                       </div>
-                      <div className="flex items-center">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                        <span className="text-sm font-medium">4.5</span>
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <span className="flex items-center">
+                          <Bed className="w-4 h-4 mr-1" />
+                          {result.Beds}
+                        </span>
+                        <span className="flex items-center">
+                          <Bath className="w-4 h-4 mr-1" />
+                          {result.Baths}
+                        </span>
                       </div>
                     </div>
-                    
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2 flex-shrink-0">
-                      {result.justification || result["Reason for recommendation"]}
-                    </p>
-                    
+
                     {/* AI Scores */}
                     {result.aiScores && (
-                      <div className="mb-3 flex-shrink-0">
-                        <div className="grid grid-cols-5 gap-1 text-xs">
+                      <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="text-xs text-gray-600 mb-2 font-medium">AI Analysis</div>
+                        <div className="grid grid-cols-5 gap-2 text-center">
                           <div className="text-center score-badge">
                             <div className={`font-semibold ${getScoreColor(result.aiScores.transit)}`}>
                               {result.aiScores.transit}/10
@@ -696,16 +882,16 @@ const SearchResults = () => {
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious 
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer btn-animate'}
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                     />
                   </PaginationItem>
                   
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                     <PaginationItem key={page}>
                       <PaginationLink
                         onClick={() => setCurrentPage(page)}
-                        className={`${currentPage === page ? 'bg-blue-600 text-white' : 'cursor-pointer'} btn-animate`}
+                        className={`cursor-pointer ${currentPage === page ? 'bg-blue-600 text-white' : ''}`}
                       >
                         {page}
                       </PaginationLink>
@@ -714,8 +900,8 @@ const SearchResults = () => {
                   
                   <PaginationItem>
                     <PaginationNext 
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer btn-animate'}
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                     />
                   </PaginationItem>
                 </PaginationContent>
