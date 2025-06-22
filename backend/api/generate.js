@@ -81,7 +81,9 @@ Format it in a JSON array like this without the "\`\`\` part":
     "title": "Address (shortned pls)",
     "link": "https://example.com/rental-link",
     "justification": "Description",
-    "Price": $xxxx.xx/month
+    "Price": $xxxx.xx/month,
+    "Min price": $xxxx.xx,
+    "Max price": $xxxx.xx,
     "Length of stay": "?? months/years/unknown",
     "Location": [longitude, latitude],
     "Beds": x bed",
