@@ -36,7 +36,7 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
     return () => clearTimeout(resetTimeout);
   }, []);
 
-  // Search handler - now redirects to results page
+  // Search handler - now calls the actual API
   const handleSearch = async () => {
     // Validate location input
     if (!searchQuery.trim()) {
@@ -54,21 +54,39 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
     setError("");
 
     try {
+      // Call the actual API
+      const payload = {
+        location: searchQuery,
+        budget: { min: budgetRange[0], max: budgetRange[1] },
+        preferences: description,
+      };
+
+      const response = await fetch("https://spurhacks-ashj.vercel.app/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
       // Create search parameters for the results page
       const searchParams = new URLSearchParams({
         location: searchQuery,
         minBudget: budgetRange[0].toString(),
         maxBudget: budgetRange[1].toString(),
-        preferences: description
+        preferences: description,
+        apiResponse: data.text // Pass the API response as a parameter
       });
-
-      // Simulate a brief loading period for better UX
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Redirect to search results page with parameters
       navigate(`/search-results?${searchParams.toString()}`);
     } catch (err) {
-      setError("An error occurred while processing your search.");
+      console.error("Search error:", err);
+      setError("An error occurred while processing your search. Please try again.");
       setLoading(false);
     }
   };

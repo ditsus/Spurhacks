@@ -4,31 +4,41 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, DollarSign, Bed, Bath, Users, Star, Heart } from "lucide-react";
+import SearchFilters from "@/components/SearchFilters";
 
 interface HousingResult {
   id: string;
   title: string;
-  location: string;
-  price: number;
-  bedrooms: number;
-  bathrooms: number;
-  maxOccupants: number;
-  rating: number;
-  description: string;
-  amenities: string[];
-  imageUrl?: string;
-  distanceFromCampus: string;
-  availableFrom: string;
+  link: string;
+  justification: string;
+  Price: string;
+  "Min price": string;
+  "Max price": string;
+  "Length of stay": string;
+  Location: [number, number];
+  Beds: string;
+  Baths: string;
+  "Available from": string;
+  Amenities: string[];
+  "Reason for recommendation": string;
 }
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [results, setResults] = useState<HousingResult[]>([]);
+  const [filteredResults, setFilteredResults] = useState<HousingResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  const [filters, setFilters] = useState({
+    priceRange: [0, 3000],
+    propertyType: "",
+    bedrooms: "",
+    amenities: [] as string[]
+  });
 
   const resultsPerPage = 9;
 
@@ -37,6 +47,7 @@ const SearchResults = () => {
     const minBudget = searchParams.get('minBudget');
     const maxBudget = searchParams.get('maxBudget');
     const preferences = searchParams.get('preferences');
+    const apiResponse = searchParams.get('apiResponse');
 
     if (!location) {
       setError("No search location provided");
@@ -44,209 +55,138 @@ const SearchResults = () => {
       return;
     }
 
-    // Simulate API call with the search parameters
-    const fetchResults = async () => {
+    if (!apiResponse) {
+      setError("No search results available");
+      setLoading(false);
+      return;
+    }
+
+    // Parse the API response
+    const parseApiResponse = () => {
       try {
         setLoading(true);
         
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Try to parse the JSON response from the API
+        let parsedResults: HousingResult[] = [];
+        
+        try {
+          // The API returns a JSON string, so we need to parse it
+          parsedResults = JSON.parse(apiResponse);
+        } catch (parseError) {
+          // If parsing fails, try to extract JSON from the response text
+          const jsonMatch = apiResponse.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            parsedResults = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error("Could not parse API response");
+          }
+        }
 
-        // Generate mock results based on search parameters
-        const mockResults: HousingResult[] = generateMockResults(location, minBudget, maxBudget, preferences);
-        setResults(mockResults);
+        // Validate and clean the results
+        const validResults = parsedResults.filter((result: any) => 
+          result && result.title && result.link
+        ).map((result: any, index: number) => ({
+          id: result.id || `result-${index}`,
+          title: result.title || "Unknown Property",
+          link: result.link || "#",
+          justification: result.justification || "",
+          Price: result.Price || "N/A",
+          "Min price": result["Min price"] || "N/A",
+          "Max price": result["Max price"] || "N/A",
+          "Length of stay": result["Length of stay"] || "Unknown",
+          Location: result.Location || [0, 0],
+          Beds: result.Beds || "N/A",
+          Baths: result.Baths || "N/A",
+          "Available from": result["Available from"] || "Unknown",
+          Amenities: Array.isArray(result.Amenities) ? result.Amenities : [],
+          "Reason for recommendation": result["Reason for recommendation"] || ""
+        }));
+
+        setResults(validResults);
+        setFilteredResults(validResults);
+        
+        // Set initial price range from search parameters
+        if (minBudget && maxBudget) {
+          setFilters(prev => ({
+            ...prev,
+            priceRange: [parseInt(minBudget), parseInt(maxBudget)]
+          }));
+        }
+        
       } catch (err) {
-        setError("Failed to fetch search results");
+        console.error("Error parsing API response:", err);
+        setError("Failed to parse search results");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchResults();
+    parseApiResponse();
   }, [searchParams]);
 
-  const generateMockResults = (location: string, minBudget: string | null, maxBudget: string | null, preferences: string | null): HousingResult[] => {
-    const mockData: HousingResult[] = [
-      {
-        id: "1",
-        title: "Modern Student Apartment",
-        location: `${location} - Downtown`,
-        price: 1200,
-        bedrooms: 2,
-        bathrooms: 1,
-        maxOccupants: 3,
-        rating: 4.5,
-        description: "Spacious 2-bedroom apartment with modern amenities, perfect for students. Close to campus and public transportation.",
-        amenities: ["WiFi", "Furnished", "Gym", "Laundry"],
-        distanceFromCampus: "0.5 miles",
-        availableFrom: "August 2024"
-      },
-      {
-        id: "2",
-        title: "Cozy Studio Near Campus",
-        location: `${location} - University District`,
-        price: 850,
-        bedrooms: 1,
-        bathrooms: 1,
-        maxOccupants: 1,
-        rating: 4.2,
-        description: "Perfect studio apartment for single students. Quiet neighborhood with easy access to campus.",
-        amenities: ["WiFi", "Furnished", "Kitchen", "Parking"],
-        distanceFromCampus: "0.3 miles",
-        availableFrom: "September 2024"
-      },
-      {
-        id: "3",
-        title: "Shared House - Student Friendly",
-        location: `${location} - Residential Area`,
-        price: 650,
-        bedrooms: 1,
-        bathrooms: 1,
-        maxOccupants: 2,
-        rating: 4.0,
-        description: "Shared house with other students. Great community atmosphere and affordable rent.",
-        amenities: ["WiFi", "Kitchen", "Backyard", "Utilities Included"],
-        distanceFromCampus: "1.2 miles",
-        availableFrom: "August 2024"
-      },
-      {
-        id: "4",
-        title: "Luxury Student Housing",
-        location: `${location} - Premium District`,
-        price: 1800,
-        bedrooms: 2,
-        bathrooms: 2,
-        maxOccupants: 4,
-        rating: 4.8,
-        description: "Premium student housing with luxury amenities. Perfect for those who want the best living experience.",
-        amenities: ["WiFi", "Furnished", "Gym", "Pool", "Study Rooms", "Rooftop"],
-        distanceFromCampus: "0.8 miles",
-        availableFrom: "August 2024"
-      },
-      {
-        id: "5",
-        title: "Budget-Friendly Room",
-        location: `${location} - Affordable Area`,
-        price: 500,
-        bedrooms: 1,
-        bathrooms: 1,
-        maxOccupants: 1,
-        rating: 3.8,
-        description: "Affordable room in a shared apartment. Basic amenities but great value for money.",
-        amenities: ["WiFi", "Kitchen", "Laundry"],
-        distanceFromCampus: "1.5 miles",
-        availableFrom: "September 2024"
-      },
-      {
-        id: "6",
-        title: "Family-Style Student Home",
-        location: `${location} - Quiet Neighborhood`,
-        price: 950,
-        bedrooms: 3,
-        bathrooms: 2,
-        maxOccupants: 5,
-        rating: 4.3,
-        description: "Large family-style home perfect for groups of students. Spacious and comfortable.",
-        amenities: ["WiFi", "Furnished", "Kitchen", "Garden", "Parking"],
-        distanceFromCampus: "1.0 miles",
-        availableFrom: "August 2024"
-      },
-      {
-        id: "7",
-        title: "Downtown Loft",
-        location: `${location} - City Center`,
-        price: 1400,
-        bedrooms: 1,
-        bathrooms: 1,
-        maxOccupants: 2,
-        rating: 4.6,
-        description: "Modern loft in the heart of the city. Perfect for students who love urban living.",
-        amenities: ["WiFi", "Furnished", "Gym", "Rooftop", "Security"],
-        distanceFromCampus: "1.8 miles",
-        availableFrom: "October 2024"
-      },
-      {
-        id: "8",
-        title: "Campus Adjacent Studio",
-        location: `${location} - Right by Campus`,
-        price: 1100,
-        bedrooms: 1,
-        bathrooms: 1,
-        maxOccupants: 1,
-        rating: 4.4,
-        description: "Studio apartment literally steps from campus. Perfect for students who want to minimize commute time.",
-        amenities: ["WiFi", "Furnished", "Kitchen", "Study Desk"],
-        distanceFromCampus: "0.1 miles",
-        availableFrom: "August 2024"
-      },
-      {
-        id: "9",
-        title: "Eco-Friendly Student Housing",
-        location: `${location} - Green District`,
-        price: 1300,
-        bedrooms: 2,
-        bathrooms: 1,
-        maxOccupants: 3,
-        rating: 4.7,
-        description: "Environmentally conscious housing with sustainable features. Perfect for eco-minded students.",
-        amenities: ["WiFi", "Furnished", "Solar Panels", "Garden", "Bike Storage"],
-        distanceFromCampus: "0.9 miles",
-        availableFrom: "September 2024"
-      },
-      {
-        id: "10",
-        title: "Historic Student Apartment",
-        location: `${location} - Historic District`,
-        price: 900,
-        bedrooms: 1,
-        bathrooms: 1,
-        maxOccupants: 2,
-        rating: 4.1,
-        description: "Charming apartment in a historic building. Full of character and close to campus.",
-        amenities: ["WiFi", "Furnished", "High Ceilings", "Original Features"],
-        distanceFromCampus: "0.7 miles",
-        availableFrom: "August 2024"
-      },
-      {
-        id: "11",
-        title: "Modern High-Rise Student Living",
-        location: `${location} - Business District`,
-        price: 1600,
-        bedrooms: 2,
-        bathrooms: 2,
-        maxOccupants: 4,
-        rating: 4.9,
-        description: "Luxury high-rise apartment with stunning city views. Premium amenities and services.",
-        amenities: ["WiFi", "Furnished", "Gym", "Pool", "Concierge", "Security"],
-        distanceFromCampus: "1.3 miles",
-        availableFrom: "August 2024"
-      },
-      {
-        id: "12",
-        title: "Quiet Suburban Student Home",
-        location: `${location} - Suburban Area`,
-        price: 750,
-        bedrooms: 2,
-        bathrooms: 1,
-        maxOccupants: 3,
-        rating: 4.0,
-        description: "Peaceful suburban home perfect for students who prefer a quiet environment.",
-        amenities: ["WiFi", "Furnished", "Garden", "Parking", "Quiet Area"],
-        distanceFromCampus: "2.1 miles",
-        availableFrom: "September 2024"
-      }
-    ];
+  // Apply filters when filters change
+  useEffect(() => {
+    let filtered = [...results];
 
-    // Filter by budget if provided
-    let filteredResults = mockData;
-    if (minBudget && maxBudget) {
-      const min = parseInt(minBudget);
-      const max = parseInt(maxBudget);
-      filteredResults = mockData.filter(result => result.price >= min && result.price <= max);
+    // Filter by price range
+    filtered = filtered.filter(result => {
+      const price = parseFloat(result.Price.replace(/[^0-9.]/g, '')) || 0;
+      return price >= filters.priceRange[0] && price <= filters.priceRange[1];
+    });
+
+    // Filter by property type (if we can determine it from the title)
+    if (filters.propertyType) {
+      filtered = filtered.filter(result => {
+        const title = result.title.toLowerCase();
+        switch (filters.propertyType) {
+          case 'apartment':
+            return title.includes('apartment') || title.includes('apt');
+          case 'house':
+            return title.includes('house') || title.includes('home');
+          case 'studio':
+            return title.includes('studio');
+          case 'shared':
+            return title.includes('shared') || title.includes('room');
+          default:
+            return true;
+        }
+      });
     }
 
-    return filteredResults;
-  };
+    // Filter by bedrooms
+    if (filters.bedrooms) {
+      filtered = filtered.filter(result => {
+        const beds = result.Beds.toLowerCase();
+        switch (filters.bedrooms) {
+          case '1':
+            return beds.includes('1') && !beds.includes('2') && !beds.includes('3') && !beds.includes('4');
+          case '2':
+            return beds.includes('2') && !beds.includes('3') && !beds.includes('4');
+          case '3':
+            return beds.includes('3') && !beds.includes('4');
+          case '4+':
+            return beds.includes('4') || beds.includes('5') || beds.includes('6');
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Filter by amenities
+    if (filters.amenities.length > 0) {
+      filtered = filtered.filter(result => {
+        const resultAmenities = result.Amenities.map((a: string) => a.toLowerCase());
+        return filters.amenities.some(amenity => 
+          resultAmenities.some(resultAmenity => 
+            resultAmenity.includes(amenity.toLowerCase())
+          )
+        );
+      });
+    }
+
+    setFilteredResults(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [results, filters]);
 
   const toggleFavorite = (id: string) => {
     const newFavorites = new Set(favorites);
@@ -258,10 +198,10 @@ const SearchResults = () => {
     setFavorites(newFavorites);
   };
 
-  const totalPages = Math.ceil(results.length / resultsPerPage);
+  const totalPages = Math.ceil(filteredResults.length / resultsPerPage);
   const startIndex = (currentPage - 1) * resultsPerPage;
   const endIndex = startIndex + resultsPerPage;
-  const currentResults = results.slice(startIndex, endIndex);
+  const currentResults = filteredResults.slice(startIndex, endIndex);
 
   const location = searchParams.get('location') || 'Unknown Location';
   const minBudget = searchParams.get('minBudget');
@@ -272,8 +212,8 @@ const SearchResults = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Finding Your Perfect Home</h2>
-          <p className="text-gray-500">Searching for housing options in {location}...</p>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Processing Search Results</h2>
+          <p className="text-gray-500">Analyzing housing options in {location}...</p>
         </div>
       </div>
     );
@@ -325,22 +265,39 @@ const SearchResults = () => {
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-600">
-                {results.length} properties found
+                {filteredResults.length} properties found
               </p>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Search Filters */}
+      <SearchFilters filters={filters} setFilters={setFilters} />
+
       {/* Results Grid */}
       <div className="container mx-auto px-4 py-8">
         {currentResults.length === 0 ? (
           <div className="text-center py-12">
             <h2 className="text-xl font-semibold text-gray-700 mb-2">No Results Found</h2>
-            <p className="text-gray-500 mb-4">Try adjusting your search criteria</p>
-            <Button onClick={() => navigate('/')} className="bg-blue-600 hover:bg-blue-700">
-              Modify Search
-            </Button>
+            <p className="text-gray-500 mb-4">
+              {filteredResults.length === 0 && results.length > 0 
+                ? "Try adjusting your filters" 
+                : "No properties match your search criteria"}
+            </p>
+            {filteredResults.length === 0 && results.length > 0 && (
+              <Button 
+                onClick={() => setFilters({
+                  priceRange: [0, 3000],
+                  propertyType: "",
+                  bedrooms: "",
+                  amenities: []
+                })} 
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
         ) : (
           <>
@@ -355,20 +312,16 @@ const SearchResults = () => {
                         </CardTitle>
                         <div className="flex items-center text-gray-600 text-sm mb-2">
                           <MapPin className="w-4 h-4 mr-1" />
-                          {result.location}
+                          {location}
                         </div>
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                           <div className="flex items-center">
                             <Bed className="w-4 h-4 mr-1" />
-                            {result.bedrooms} bed
+                            {result.Beds}
                           </div>
                           <div className="flex items-center">
                             <Bath className="w-4 h-4 mr-1" />
-                            {result.bathrooms} bath
-                          </div>
-                          <div className="flex items-center">
-                            <Users className="w-4 h-4 mr-1" />
-                            Up to {result.maxOccupants}
+                            {result.Baths}
                           </div>
                         </div>
                       </div>
@@ -388,38 +341,41 @@ const SearchResults = () => {
                   <CardContent className="pt-0">
                     <div className="flex items-center justify-between mb-3">
                       <div className="text-2xl font-bold text-blue-600">
-                        ${result.price}
+                        {result.Price}
                         <span className="text-sm font-normal text-gray-500">/month</span>
                       </div>
                       <div className="flex items-center">
                         <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                        <span className="text-sm font-medium">{result.rating}</span>
+                        <span className="text-sm font-medium">4.5</span>
                       </div>
                     </div>
                     
                     <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {result.description}
+                      {result.justification || result["Reason for recommendation"]}
                     </p>
                     
                     <div className="flex flex-wrap gap-1 mb-3">
-                      {result.amenities.slice(0, 3).map((amenity, index) => (
+                      {result.Amenities.slice(0, 3).map((amenity, index) => (
                         <Badge key={index} variant="secondary" className="text-xs">
                           {amenity}
                         </Badge>
                       ))}
-                      {result.amenities.length > 3 && (
+                      {result.Amenities.length > 3 && (
                         <Badge variant="outline" className="text-xs">
-                          +{result.amenities.length - 3} more
+                          +{result.Amenities.length - 3} more
                         </Badge>
                       )}
                     </div>
                     
                     <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                      <span>📍 {result.distanceFromCampus} from campus</span>
-                      <span>📅 Available {result.availableFrom}</span>
+                      <span>📅 Available {result["Available from"]}</span>
+                      <span>⏱️ {result["Length of stay"]}</span>
                     </div>
                     
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                    <Button 
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      onClick={() => window.open(result.link, '_blank')}
+                    >
                       View Details
                     </Button>
                   </CardContent>
