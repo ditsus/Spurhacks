@@ -317,13 +317,6 @@ const HousingSurvey = () => {
           <div className={`mt-6 transform transition-all duration-500 delay-1300 ${
             isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
           }`}>
-            <Button 
-              variant="ghost" 
-              onClick={handleBackToHome} 
-              className="w-full transition-all duration-200 hover:scale-105 active:scale-95"
-            >
-              ← Back to Home
-            </Button>
           </div>
         </div>
       </div>
