@@ -3,10 +3,11 @@ import fs      from 'fs';
 import path    from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-
 import cors from 'cors';
 
+import { connectDB } from "./config/db.js";
 dotenv.config();
+await connectDB();
 
 
 
@@ -37,6 +38,7 @@ app.use(
 
 const apiDir = path.join(__dirname, 'api');
 for (const file of fs.readdirSync(apiDir).filter(f => f.endsWith('.js'))) {
+  console.log("📦 found", file);   
   const { default: router } = await import(`./api/${file}`);
   const name = path.basename(file, '.js');
   app.use(`/api/${name}`, router);
@@ -50,4 +52,6 @@ app.use((err, _req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+
 app.listen(PORT, () => console.log(`Listening on http://localhost:${PORT}`));
