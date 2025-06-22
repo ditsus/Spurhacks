@@ -1,8 +1,7 @@
 
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
-import FeaturedProperties from "@/components/FeaturedProperties";
-import SearchFilters from "@/components/SearchFilters";
+import Footer from "@/components/Footer";
 import { useState } from "react";
 
 const Index = () => {
@@ -18,8 +17,7 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <Hero searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-      <SearchFilters filters={filters} setFilters={setFilters} />
-      <FeaturedProperties searchQuery={searchQuery} filters={filters} />
+      <Footer />
     </div>
   );
 };

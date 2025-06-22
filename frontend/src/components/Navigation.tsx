@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Home, Heart, User, Menu } from "lucide-react";
+import { Heart, User, Menu } from "lucide-react";
 import { useState } from "react";
 
 const Navigation = ({ onNavigateToLogin }) => {
@@ -18,7 +18,33 @@ const Navigation = ({ onNavigateToLogin }) => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Home className="h-8 w-8 text-blue-600 mr-2" />
+            <div className="mr-3">
+              <svg width="32" height="32" viewBox="0 0 200 200" className="text-blue-600">
+                {/* House outline */}
+                <path 
+                  d="M30 170 L30 80 L100 20 L170 80 L170 170 Z" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="12" 
+                  strokeLinejoin="round"
+                />
+                
+                {/* Vertical sliders */}
+                <g stroke="currentColor" strokeWidth="8" strokeLinecap="round">
+                  {/* Left slider */}
+                  <line x1="65" y1="60" x2="65" y2="150" />
+                  <circle cx="65" cy="90" r="8" fill="currentColor" />
+                  
+                  {/* Center slider */}
+                  <line x1="100" y1="50" x2="100" y2="150" />
+                  <circle cx="100" cy="80" r="8" fill="currentColor" />
+                  
+                  {/* Right slider */}
+                  <line x1="135" y1="60" x2="135" y2="150" />
+                  <circle cx="135" cy="110" r="8" fill="currentColor" />
+                </g>
+              </svg>
+            </div>
             <span className="text-xl font-bold text-gray-900">Housely</span>
           </div>
 
