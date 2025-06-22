@@ -16,7 +16,24 @@ const __dirname  = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-app.use(cors({ origin: 'https://www.housesnear.us' }));
+const allowedOrigins = [
+  'https://www.housesnear.us',    // production
+  'http://localhost:8080',        // local dev
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin, like curl or mobile apps
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error('Not allowed by CORS'));
+      }
+    },
+  })
+);
 
 const apiDir = path.join(__dirname, 'api');
 for (const file of fs.readdirSync(apiDir).filter(f => f.endsWith('.js'))) {
