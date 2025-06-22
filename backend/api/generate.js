@@ -66,13 +66,32 @@ if (filteredRentals.length > 0) {
   const prefs = (preferences && preferences.trim()) ? preferences.trim() : "No specific preferences provided.";
 
   const prompt = `
-You are an expert rental assistant.
+You are a real estate agent specializing in meeting consumer demands for student housing.
+You have access to a database of available rentals in various cities, including Kingston, London, Toronto, and Waterloo. 
+Your task is to recommend suitable rental options based on the user's location, budget, and preferences.
 Here are available rentals as a JSON array:
 ${JSON.stringify(filteredRentals.slice(0, 50), null, 2)}
 Location: ${cityKey}
 Budget: $${budget?.min ?? "?"} to $${budget?.max ?? "?"} per month.
 Preferences: ${prefs}
 Please recommend the top 5-10 rentals for a student, justifying your picks, and include the title and link. Be concise and helpful.
+Format it in a JSON array like this without the "\`\`\` part":
+[
+  {
+    "title": "Address (shortned pls)",
+    "link": "https://example.com/rental-link",
+    "justification": "Description",
+    "Price": $xxxx.xx/month,
+    "Min price": $xxxx.xx,
+    "Max price": $xxxx.xx,
+    "Length of stay": "?? months/years/unknown",
+    "Location": [longitude, latitude],
+    "Beds": x bed",
+    "Baths: x bath"
+    "Available from": "YYYY-MM-DD",
+    "Amenities": ["amenity1", "wifi", ...]
+    "Reason for recommendation": "Concise reason why this rental is a good fit for the user"
+  },
   `;
   console.log('Prompt length:', prompt.length);
   console.log('Prompt sent to Gemini:', prompt.substring(0, 1000), filteredRentals.length > 20 ? '...[truncated]' : '');
