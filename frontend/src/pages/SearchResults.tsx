@@ -66,6 +66,7 @@ const SearchResults = () => {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [usingCache, setUsingCache] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   const [filters, setFilters] = useState({
     priceRange: [0, 2000],
@@ -76,6 +77,33 @@ const SearchResults = () => {
   });
 
   const resultsPerPage = 9;
+
+  // Global error handler to prevent white screens
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('Global error caught:', event.error);
+      setHasError(true);
+      setError("An unexpected error occurred. Please try refreshing the page.");
+      setLoading(false);
+      setIsStreaming(false);
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      setHasError(true);
+      setError("A network error occurred. Please check your connection and try again.");
+      setLoading(false);
+      setIsStreaming(false);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
 
   // Progressive loading function
   const processResultsProgressively = (rawResults: any[]) => {
@@ -137,44 +165,83 @@ const SearchResults = () => {
 
   // Process individual result
   const processResult = (result: any, index: number) => {
-    const title = result.title.toLowerCase();
-    let propertyType = 'apartment';
-    if (title.includes('house') || title.includes('home')) {
-      propertyType = 'house';
-    } else if (title.includes('studio')) {
-      propertyType = 'studio';
-    } else if (title.includes('shared') || title.includes('room')) {
-      propertyType = 'shared';
+    try {
+      const title = typeof result.title === 'string' ? result.title.toLowerCase() : '';
+      let propertyType = 'apartment';
+      if (title.includes('house') || title.includes('home')) {
+        propertyType = 'house';
+      } else if (title.includes('studio')) {
+        propertyType = 'studio';
+      } else if (title.includes('shared') || title.includes('room')) {
+        propertyType = 'shared';
+      }
+
+      const aiScores = {
+        transit: Math.floor(Math.random() * 4) + 7,
+        quietness: Math.floor(Math.random() * 4) + 6,
+        location: Math.floor(Math.random() * 4) + 7,
+        safety: Math.floor(Math.random() * 3) + 7,
+        value: Math.floor(Math.random() * 4) + 6,
+      };
+
+      // Bulletproof price handling
+      let priceDisplay = "N/A";
+      if (typeof result.Price === 'string') {
+        priceDisplay = result.Price;
+      } else if (typeof result.Price === 'number') {
+        priceDisplay = `$${result.Price}`;
+      }
+
+      return {
+        id: result.id || `result-${index}`,
+        title: result.title || "Unknown Property",
+        link: result.link || "#",
+        justification: result.justification || "",
+        Price: priceDisplay,
+        "Min price": result["Min price"] || "N/A",
+        "Max price": result["Max price"] || "N/A",
+        "Length of stay": result["Length of stay"] || "Unknown",
+        Location: Array.isArray(result.Location) ? result.Location : [0, 0],
+        Beds: result.Beds || "N/A",
+        Baths: result.Baths || "N/A",
+        "Available from": result["Available from"] || "Unknown",
+        Amenities: Array.isArray(result.Amenities) ? result.Amenities : [],
+        "Reason for recommendation": result["Reason for recommendation"] || "",
+        Images: Array.isArray(result.Images) ? result.Images : [],
+        postalCode: `K${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))} ${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 9) + 1}`,
+        propertyType,
+        aiScores
+      };
+    } catch (error) {
+      console.error('Error processing result:', error, result);
+      // Return a safe fallback result
+      return {
+        id: `fallback-${index}`,
+        title: "Property Information Unavailable",
+        link: "#",
+        justification: "This property's information could not be processed properly.",
+        Price: "N/A",
+        "Min price": "N/A",
+        "Max price": "N/A",
+        "Length of stay": "Unknown",
+        Location: [0, 0] as [number, number],
+        Beds: "N/A",
+        Baths: "N/A",
+        "Available from": "Unknown",
+        Amenities: [] as string[],
+        "Reason for recommendation": "Property data unavailable",
+        Images: [] as string[],
+        postalCode: "N/A",
+        propertyType: "apartment",
+        aiScores: {
+          transit: 7,
+          quietness: 6,
+          location: 7,
+          safety: 7,
+          value: 6,
+        }
+      } as HousingResult;
     }
-
-    const aiScores = {
-      transit: Math.floor(Math.random() * 4) + 7,
-      quietness: Math.floor(Math.random() * 4) + 6,
-      location: Math.floor(Math.random() * 4) + 7,
-      safety: Math.floor(Math.random() * 3) + 7,
-      value: Math.floor(Math.random() * 4) + 6,
-    };
-
-    return {
-      id: result.id || `result-${index}`,
-      title: result.title || "Unknown Property",
-      link: result.link || "#",
-      justification: result.justification || "",
-      Price: result.Price || "N/A",
-      "Min price": result["Min price"] || "N/A",
-      "Max price": result["Max price"] || "N/A",
-      "Length of stay": result["Length of stay"] || "Unknown",
-      Location: result.Location || [0, 0],
-      Beds: result.Beds || "N/A",
-      Baths: result.Baths || "N/A",
-      "Available from": result["Available from"] || "Unknown",
-      Amenities: Array.isArray(result.Amenities) ? result.Amenities : [],
-      "Reason for recommendation": result["Reason for recommendation"] || "",
-      Images: result.Images || [],
-      postalCode: `K${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))} ${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 9) + 1}`,
-      propertyType,
-      aiScores
-    };
   };
 
   useEffect(() => {
@@ -398,78 +465,130 @@ const SearchResults = () => {
 
   // Apply filters when filters change
   useEffect(() => {
-    let filtered = [...results];
+    try {
+      let filtered = [...results];
 
-    // Filter by price range
-    filtered = filtered.filter(result => {
-      const price = parseFloat(result.Price.replace(/[^0-9.]/g, '')) || 0;
-      return price >= filters.priceRange[0] && price <= filters.priceRange[1];
-    });
-
-    // Filter by property type
-    if (filters.propertyType) {
+      // Filter by price range
       filtered = filtered.filter(result => {
-        return result.propertyType === filters.propertyType;
+        try {
+          // Bulletproof price parsing - handle both string and number types
+          let priceValue = 0;
+          if (typeof result.Price === 'string') {
+            priceValue = parseFloat(result.Price.replace(/[^0-9.]/g, '')) || 0;
+          } else if (typeof result.Price === 'number') {
+            priceValue = result.Price;
+          } else {
+            // If Price is undefined, null, or other type, default to 0
+            priceValue = 0;
+          }
+          return priceValue >= filters.priceRange[0] && priceValue <= filters.priceRange[1];
+        } catch (error) {
+          console.error('Error filtering by price:', error, result);
+          // If there's an error parsing price, include the result anyway
+          return true;
+        }
       });
-    }
 
-    // Filter by bedrooms
-    if (filters.bedrooms) {
-      filtered = filtered.filter(result => {
-        const beds = result.Beds.toLowerCase();
-        switch (filters.bedrooms) {
-          case '1':
-            return beds.includes('1') && !beds.includes('2') && !beds.includes('3') && !beds.includes('4');
-          case '2':
-            return beds.includes('2') && !beds.includes('3') && !beds.includes('4');
-          case '3':
-            return beds.includes('3') && !beds.includes('4');
-          case '4+':
-            return beds.includes('4') || beds.includes('5') || beds.includes('6');
-          default:
+      // Filter by property type
+      if (filters.propertyType) {
+        filtered = filtered.filter(result => {
+          try {
+            return result.propertyType === filters.propertyType;
+          } catch (error) {
+            console.error('Error filtering by property type:', error, result);
             return true;
-        }
-      });
-    }
+          }
+        });
+      }
 
-    // Filter by amenities
-    if (filters.amenities.length > 0) {
-      filtered = filtered.filter(result => {
-        const resultAmenities = result.Amenities.map((a: string) => a.toLowerCase());
-        return filters.amenities.some(amenity => 
-          resultAmenities.some(resultAmenity => 
-            resultAmenity.includes(amenity.toLowerCase())
-          )
-        );
-      });
-    }
+      // Filter by bedrooms
+      if (filters.bedrooms) {
+        filtered = filtered.filter(result => {
+          try {
+            const beds = typeof result.Beds === 'string' ? result.Beds.toLowerCase() : '';
+            switch (filters.bedrooms) {
+              case '1':
+                return beds.includes('1') && !beds.includes('2') && !beds.includes('3') && !beds.includes('4');
+              case '2':
+                return beds.includes('2') && !beds.includes('3') && !beds.includes('4');
+              case '3':
+                return beds.includes('3') && !beds.includes('4');
+              case '4+':
+                return beds.includes('4') || beds.includes('5') || beds.includes('6');
+              default:
+                return true;
+            }
+          } catch (error) {
+            console.error('Error filtering by bedrooms:', error, result);
+            return true;
+          }
+        });
+      }
 
-    // Sort results
-    if (filters.sortBy) {
-      filtered.sort((a, b) => {
-        switch (filters.sortBy) {
-          case 'price-asc':
-            const priceA = parseFloat(a.Price.replace(/[^0-9.]/g, '')) || 0;
-            const priceB = parseFloat(b.Price.replace(/[^0-9.]/g, '')) || 0;
-            return priceA - priceB;
-          case 'price-desc':
-            const priceC = parseFloat(a.Price.replace(/[^0-9.]/g, '')) || 0;
-            const priceD = parseFloat(b.Price.replace(/[^0-9.]/g, '')) || 0;
-            return priceD - priceC;
-          case 'rating':
-            // For now, use a default rating of 4.5 for all properties
-            return 0; // Could be enhanced with actual rating data
-          case 'newest':
-            // For now, maintain original order
-            return 0; // Could be enhanced with actual date data
-          default:
+      // Filter by amenities
+      if (filters.amenities.length > 0) {
+        filtered = filtered.filter(result => {
+          try {
+            const resultAmenities = Array.isArray(result.Amenities) 
+              ? result.Amenities.map((a: string) => a.toLowerCase())
+              : [];
+            return filters.amenities.some(amenity => 
+              resultAmenities.some(resultAmenity => 
+                resultAmenity.includes(amenity.toLowerCase())
+              )
+            );
+          } catch (error) {
+            console.error('Error filtering by amenities:', error, result);
+            return true;
+          }
+        });
+      }
+
+      // Sort results
+      if (filters.sortBy) {
+        filtered.sort((a, b) => {
+          try {
+            switch (filters.sortBy) {
+              case 'price-asc':
+                const priceA = typeof a.Price === 'string' 
+                  ? parseFloat(a.Price.replace(/[^0-9.]/g, '')) || 0
+                  : (typeof a.Price === 'number' ? a.Price : 0);
+                const priceB = typeof b.Price === 'string' 
+                  ? parseFloat(b.Price.replace(/[^0-9.]/g, '')) || 0
+                  : (typeof b.Price === 'number' ? b.Price : 0);
+                return priceA - priceB;
+              case 'price-desc':
+                const priceC = typeof a.Price === 'string' 
+                  ? parseFloat(a.Price.replace(/[^0-9.]/g, '')) || 0
+                  : (typeof a.Price === 'number' ? a.Price : 0);
+                const priceD = typeof b.Price === 'string' 
+                  ? parseFloat(b.Price.replace(/[^0-9.]/g, '')) || 0
+                  : (typeof b.Price === 'number' ? b.Price : 0);
+                return priceD - priceC;
+              case 'rating':
+                // For now, use a default rating of 4.5 for all properties
+                return 0; // Could be enhanced with actual rating data
+              case 'newest':
+                // For now, maintain original order
+                return 0; // Could be enhanced with actual date data
+              default:
+                return 0;
+            }
+          } catch (error) {
+            console.error('Error sorting results:', error);
             return 0;
-        }
-      });
-    }
+          }
+        });
+      }
 
-    setFilteredResults(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+      setFilteredResults(filtered);
+      setCurrentPage(1); // Reset to first page when filters change
+    } catch (error) {
+      console.error('Critical error in filter logic:', error);
+      // If filtering fails completely, show all results
+      setFilteredResults(results);
+      setCurrentPage(1);
+    }
   }, [results, filters]);
 
   const toggleFavorite = (id: string) => {
@@ -617,6 +736,37 @@ const SearchResults = () => {
     if (score >= 5) return 'text-yellow-600';
     return 'text-red-600';
   };
+
+  // Final safety check - if we somehow get here with no state, show a fallback
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <h2 className="text-xl font-semibold mb-2">Something Went Wrong</h2>
+            <p className="text-sm">We encountered an unexpected error. Please try again.</p>
+          </div>
+          <div className="space-y-4">
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="bg-blue-600 hover:bg-blue-700 w-full"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Page
+            </Button>
+            <Button 
+              onClick={() => navigate('/')} 
+              variant="outline"
+              className="w-full"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Search
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
