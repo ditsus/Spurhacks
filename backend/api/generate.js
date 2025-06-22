@@ -80,17 +80,17 @@ Format it in a JSON array like this without the "\`\`\` part":
   {
     "title": "Address (shortned pls)",
     "link": "https://example.com/rental-link",
-    "justification": "Description",
+    "Description of house": "Description",
     "Price": $xxxx.xx/month,
     "Min price": $xxxx.xx,
     "Max price": $xxxx.xx,
-    "Length of stay": "?? months/years/unknown",
     "Location": [longitude, latitude],
-    "Beds": x bed",
-    "Baths: x bath"
+    "Beds": x beds",
+    "Baths: x baths"
     "Available from": "YYYY-MM-DD",
     "Amenities": ["amenity1", "wifi", ...]
-    "Reason for recommendation": "Concise reason why this rental is a good fit for the user"
+    "Reason for recommendation": "Concise reason why this rental is a good fit for the user",
+    "Images": ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
   },
   `;
   console.log('Prompt length:', prompt.length);
