@@ -17,9 +17,10 @@ const Login = () => {
     return () => clearTimeout(t);
   }, []);
 
-  /* nav helpers */
-  const goHome = () => (window.location.href = "/");
-  const goRegister = () => (window.location.href = "/register");
+  /* -------------------- navigation helpers ----------------- */
+  const goHome    = () => (window.location.href = "/");
+  const goRegister= () => (window.location.href = "/register");
+  const goDashboard= () => (window.location.href = "/dashboard");
 
   /* submit handler */
   const handleSubmit = async () => {
@@ -33,7 +34,7 @@ const Login = () => {
     setLoading(true);
     try {
       console.log("🔸 sending POST /api/login");
-      const res = await fetch("/api/login", {
+      const res = await fetch("https://spurhacks-ashj.vercel.app/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
@@ -125,18 +126,30 @@ const Login = () => {
           {error && <div className="text-center text-red-600 text-sm">{error}</div>}
 
           {/* submit */}
-          <Button
-            disabled={loading}
-            onClick={handleSubmit}
-            className="w-full bg-blue-600 hover:bg-blue-700"
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </Button>
+          <div className={`transform transition-all duration-500 delay-900 ${
+            isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+          }`}>
+            <Button
+              type="submit"
+              disabled={loading}
+              onClick={goDashboard}
+              className="w-full bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 active:scale-95"
+            >
+              {loading ? "Signing in…" : "Sign in"}
+            </Button>
+          </div>
 
-          {/* divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+          {/* divider + create account */}
+          <div className="mt-6">
+            <div className={`relative transform transition-all duration-500 delay-1000 ${
+              isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
+            }`}>
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or</span>
+              </div>
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-white text-gray-500">Or</span>
