@@ -3,10 +3,13 @@ import fs      from 'fs';
 import path    from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-
 import cors from 'cors';
 
+import { connectDB } from "./config/db.js";
+import authRoutes    from "./api/auth.js";
+
 dotenv.config();
+await connectDB();
 
 
 
