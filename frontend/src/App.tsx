@@ -9,6 +9,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import HousingSurvey from "./pages/HousingSurvey";
 import Dashboard from "./pages/Dashboard";
+import SearchResults from "./pages/SearchResults";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -24,6 +26,7 @@ const App = () => (
           <Route path="/register" element={<Register />} /> 
           <Route path="/housingsurvey" element={<HousingSurvey />} /> 
           <Route path="/dashboard" element={<Dashboard />} /> 
+          <Route path="/search-results" element={<SearchResults />} /> 
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

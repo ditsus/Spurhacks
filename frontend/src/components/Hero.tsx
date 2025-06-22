@@ -3,6 +3,7 @@ import { Search, MapPin, DollarSign, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "react-router-dom";
 
 interface HeroProps {
   searchQuery: string;
@@ -20,8 +21,8 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
 
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
-  const [geminiResponse, setGeminiResponse] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Force reset animation state
@@ -35,45 +36,39 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
     return () => clearTimeout(resetTimeout);
   }, []);
 
-  // Gemini call
+  // Search handler - now redirects to results page
   const handleSearch = async () => {
     // Validate location input
     if (!searchQuery.trim()) {
       setError("Please enter a location to search for student housing.");
-      setGeminiResponse("");
       return;
     }
 
     // Validate description input
     if (!description.trim()) {
       setError("Please describe what you're looking for to get personalized suggestions.");
-      setGeminiResponse("");
       return;
     }
 
     setLoading(true);
     setError("");
-    setGeminiResponse("");
-
-    // Send the raw values, not a prompt
-    const payload = {
-      location: searchQuery,
-      budget: { min: budgetRange[0], max: budgetRange[1] },
-      preferences: description,
-    };
 
     try {
-      const res = await fetch("https://spurhacks-ashj.vercel.app/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      // Create search parameters for the results page
+      const searchParams = new URLSearchParams({
+        location: searchQuery,
+        minBudget: budgetRange[0].toString(),
+        maxBudget: budgetRange[1].toString(),
+        preferences: description
       });
-      if (!res.ok) throw new Error("Backend error");
-      const data = await res.json();
-      setGeminiResponse(data.text || JSON.stringify(data));
+
+      // Simulate a brief loading period for better UX
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Redirect to search results page with parameters
+      navigate(`/search-results?${searchParams.toString()}`);
     } catch (err) {
-      setError("Could not connect to backend or Gemini.");
-    } finally {
+      setError("An error occurred while processing your search.");
       setLoading(false);
     }
   };
@@ -362,15 +357,7 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
             </div>
           )}
 
-          {/* Gemini Response */}
-          {geminiResponse && !loading && (
-            <div className={`mt-6 max-w-3xl mx-auto bg-white/90 rounded-xl p-4 shadow-xl text-gray-800 transform transition-all duration-500 ${
-              geminiResponse ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'
-            }`}>
-              <h2 className="font-bold text-base mb-2 text-blue-700">Housing Recommendations</h2>
-              <pre className="whitespace-pre-wrap text-sm">{geminiResponse}</pre>
-            </div>
-          )}
+          {/* Error message */}
           {error && (
             <div className={`mt-3 max-w-3xl mx-auto bg-red-100 rounded-xl p-3 shadow text-red-700 text-sm transform transition-all duration-300 ${
               error ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
