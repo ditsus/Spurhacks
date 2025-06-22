@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { Search, MapPin, DollarSign } from "lucide-react";
+import { Search, MapPin, DollarSign, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,7 +61,7 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
       budget: { min: budgetRange[0], max: budgetRange[1] },
       preferences: description,
     };
-//
+
     try {
       const res = await fetch("https://spurhacks-ashj.vercel.app/api/generate", {
         method: "POST",
@@ -195,20 +195,44 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-12 h-12 text-base border-gray-200 focus:border-blue-500 text-gray-900 transition-all duration-200 hover:shadow-md focus:shadow-lg"
+                    disabled={loading}
                   />
                 </div>
                 <Button
-                  className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-base font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                  className={`h-12 px-6 text-base font-semibold transition-all duration-300 transform relative overflow-hidden ${
+                    loading 
+                      ? 'bg-blue-700 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700 hover:scale-105 active:scale-95'
+                  }`}
                   onClick={handleSearch}
                   disabled={loading}
                 >
-                  <Search className="mr-2 h-4 w-4" />
-                  {loading ? "Searching..." : "Search"}
+                  <div className={`flex items-center transition-all duration-300 ${
+                    loading ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
+                  }`}>
+                    <Search className="mr-2 h-4 w-4" />
+                    Search
+                  </div>
+                  
+                  {/* Loading animation overlay */}
+                  <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+                    loading ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'
+                  }`}>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm">Finding homes...</span>
+                  </div>
+                  
+                  {/* Pulse animation background */}
+                  {loading && (
+                    <div className="absolute inset-0 bg-blue-500 rounded-md animate-pulse opacity-20"></div>
+                  )}
                 </Button>
               </div>
               
               {/* Budget Range Slider */}
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div className={`bg-gray-50 rounded-lg p-3 border border-gray-200 transition-all duration-300 ${
+                loading ? 'opacity-50 pointer-events-none' : 'opacity-100'
+              }`}>
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="h-4 w-4 text-gray-600" />
                   <label className="text-gray-700 font-medium text-sm">Monthly Budget Range</label>
@@ -229,6 +253,7 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                     <div
                       className="absolute inset-0 h-2 cursor-pointer"
                       onClick={(e) => {
+                        if (loading) return;
                         const newValue = getValueFromPosition(e.clientX);
                         const distanceToMin = Math.abs(newValue - budgetRange[0]);
                         const distanceToMax = Math.abs(newValue - budgetRange[1]);
@@ -243,23 +268,23 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                     <div
                       className={`absolute w-5 h-5 bg-blue-600 rounded-full shadow-lg border-2 border-white cursor-grab transform -translate-y-1.5 -translate-x-2.5 transition-all duration-75 hover:scale-110 ${
                         isDragging === 0 ? 'cursor-grabbing scale-110 shadow-xl z-30' : budgetRange[0] === budgetRange[1] ? 'z-20' : 'z-10'
-                      }`}
+                      } ${loading ? 'pointer-events-none' : ''}`}
                       style={{
                         left: `${minPercent}%`,
                         transform: `translateY(-6px) translateX(${budgetRange[0] === budgetRange[1] ? '-15px' : '-10px'})`
                       }}
-                      onMouseDown={handleMouseDown(0)}
+                      onMouseDown={loading ? undefined : handleMouseDown(0)}
                     ></div>
                     {/* Max thumb */}
                     <div
                       className={`absolute w-5 h-5 bg-blue-600 rounded-full shadow-lg border-2 border-white cursor-grab transform -translate-y-1.5 -translate-x-2.5 transition-all duration-75 hover:scale-110 ${
                         isDragging === 1 ? 'cursor-grabbing scale-110 shadow-xl z-30' : budgetRange[0] === budgetRange[1] ? 'z-20' : 'z-10'
-                      }`}
+                      } ${loading ? 'pointer-events-none' : ''}`}
                       style={{
                         left: `${maxPercent}%`,
                         transform: `translateY(-6px) translateX(${budgetRange[0] === budgetRange[1] ? '-5px' : '-10px'})`
                       }}
-                      onMouseDown={handleMouseDown(1)}
+                      onMouseDown={loading ? undefined : handleMouseDown(1)}
                     ></div>
                   </div>
                   <div className="flex justify-between items-center gap-4">
@@ -278,6 +303,7 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                             }
                           }}
                           className="bg-blue-100 text-blue-800 pl-5 pr-2 py-1 rounded-full text-xs font-semibold w-16 h-7 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white border-0 transition-all duration-200 hover:shadow-md focus:shadow-lg"
+                          disabled={loading}
                         />
                       </div>
                     </div>
@@ -296,30 +322,52 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                             }
                           }}
                           className="bg-blue-100 text-blue-800 pl-5 pr-2 py-1 rounded-full text-xs font-semibold w-16 h-7 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white border-0 transition-all duration-200 hover:shadow-md focus:shadow-lg"
+                          disabled={loading}
                         />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div>
+              <div className={`transition-all duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
                 <Textarea
                   placeholder="Describe what you're looking for... (e.g., quiet study space, close to campus, pet-friendly)"
                   className="text-gray-900 border-gray-200 focus:border-blue-500 resize-none text-sm transition-all duration-200 hover:shadow-md focus:shadow-lg"
                   rows={2}
                   value={description}
                   onChange={e => setDescription(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
           </div>
 
+          {/* Loading indicator */}
+          {loading && (
+            <div className="mt-6 max-w-3xl mx-auto bg-white/90 rounded-xl p-6 shadow-xl text-gray-800 transform transition-all duration-500 animate-pulse">
+              <div className="flex items-center justify-center gap-3">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                <div className="text-center">
+                  <h3 className="font-semibold text-blue-700 mb-1">Finding Your Perfect Home</h3>
+                  <p className="text-sm text-gray-600">Analyzing housing options in your area...</p>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-center">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Gemini Response */}
-          {geminiResponse && (
+          {geminiResponse && !loading && (
             <div className={`mt-6 max-w-3xl mx-auto bg-white/90 rounded-xl p-4 shadow-xl text-gray-800 transform transition-all duration-500 ${
               geminiResponse ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'
             }`}>
-              <h2 className="font-bold text-base mb-2 text-blue-700">Gemini Suggestions</h2>
+              <h2 className="font-bold text-base mb-2 text-blue-700">Housing Recommendations</h2>
               <pre className="whitespace-pre-wrap text-sm">{geminiResponse}</pre>
             </div>
           )}
