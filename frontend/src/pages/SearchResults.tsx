@@ -410,7 +410,7 @@ const SearchResults = () => {
                     <div className="mt-auto pt-3">
                       <Button 
                         className="w-full bg-blue-600 hover:bg-blue-700"
-                        onClick={() => window.open(result.link, '_blank')}
+                        onClick={() => navigate(`/property/${result.id}`, { state: { property: result } })}
                       >
                         View Details
                       </Button>

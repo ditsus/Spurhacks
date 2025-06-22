@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import HousingSurvey from "./pages/HousingSurvey";
 import Dashboard from "./pages/Dashboard";
 import SearchResults from "./pages/SearchResults";
+import PropertyDetails from "./pages/PropertyDetails";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/housingsurvey" element={<HousingSurvey />} /> 
           <Route path="/dashboard" element={<Dashboard />} /> 
           <Route path="/search-results" element={<SearchResults />} /> 
+          <Route path="/property/:id" element={<PropertyDetails />} /> 
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
