@@ -20,6 +20,7 @@ const Login = () => {
   /* -------------------- navigation helpers ----------------- */
   const goHome    = () => (window.location.href = "/");
   const goRegister= () => (window.location.href = "/register");
+  const goDashboard= () => (window.location.href = "/dashboard");
 
   /* -------------------- submit handler --------------------- */
   const handleSubmit = async (e: React.FormEvent) => {
@@ -142,6 +143,7 @@ const Login = () => {
             <Button
               type="submit"
               disabled={loading}
+              onClick={goDashboard}
               className="w-full bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 active:scale-95"
             >
               {loading ? "Signing in…" : "Sign in"}

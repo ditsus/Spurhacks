@@ -50,7 +50,7 @@ const HousingSurvey = () => {
   };
 
   const handleBackToHome = () => {
-    window.location.href = '/';
+    window.location.href = '/dashboard';
   };
 
   const renderSection1 = () => (
