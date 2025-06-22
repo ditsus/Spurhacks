@@ -12,5 +12,8 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:backend": "npm run dev --prefix backend",
     "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\""
+  },
+  "dependencies": {
+    "express-list-endpoints": "^7.1.1"
   }
 }
