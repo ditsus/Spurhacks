@@ -32,6 +32,13 @@ const Registration = () => {
     window.location.href = '/login';
   };
 
+  const handleSurvey = () => {
+    // Navigate to login page
+    // In a real app, this would use your router
+    // For example with React Router: navigate('/login')
+    window.location.href = '/housingsurvey';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className={`sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 ease-out ${
@@ -139,7 +146,10 @@ const Registration = () => {
             <div className={`transform transition-all duration-500 delay-1100 ${
               isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
             }`}>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 active:scale-95">
+              <Button 
+                onClick={handleSurvey}
+                className="w-full bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 active:scale-95"
+              >
                 Create account
               </Button>
             </div>
