@@ -68,7 +68,7 @@ if (filteredRentals.length > 0) {
   const prompt = `
 You are an expert rental assistant.
 Here are available rentals as a JSON array:
-${JSON.stringify(filteredRentals.slice(0, 20), null, 2)}
+${JSON.stringify(filteredRentals.slice(0, 50), null, 2)}
 Location: ${cityKey}
 Budget: $${budget?.min ?? "?"} to $${budget?.max ?? "?"} per month.
 Preferences: ${prefs}
