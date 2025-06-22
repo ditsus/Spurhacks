@@ -2,13 +2,20 @@ import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { useEffect, useState } from "react";
 
+/* very small e-mail regex – good enough for UI */
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+
 const Login = () => {
-  /* ---------- UI / form state ---------- */
-  const [isVisible,  setIsVisible]  = useState(false);
-  const [identifier, setIdentifier] = useState("");
+  /* ---------- state ---------- */
+  const [isVisible, setIsVisible] = useState(false);
+
+  const [email,      setEmail]      = useState("");
   const [password,   setPassword]   = useState("");
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState<string | null>(null);
+
+  /* derived – is e-mail syntactically valid? */
+  const emailValid = EMAIL_REGEX.test(email);
 
   /* intro animation */
   useEffect(() => {
@@ -17,7 +24,7 @@ const Login = () => {
     return () => clearTimeout(t);
   }, []);
 
-  /* nav helpers */
+  /* nav */
   const goHome     = () => (window.location.href = "/");
   const goRegister = () => (window.location.href = "/register");
   const goDashboard= () => (window.location.href = "/dashboard");
@@ -26,26 +33,25 @@ const Login = () => {
   const handleSubmit = async () => {
     setError(null);
 
-    if (!identifier || !password) {
-      setError("Please enter email/username and password");
+    if (!email || !password) {
+      setError("Please enter e-mail and password");
+      return;
+    }
+    if (!emailValid) {
+      setError("Please enter a valid e-mail address");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch("https://spurhacks-ashj.vercel.app/api/login", {
+      const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          identifier.includes("@")
-            ? { email: identifier, password }
-            : { username: identifier, password }
-        ),
+        body:   JSON.stringify({ email, password }),
       });
       const data = await res.json();
 
       if (res.ok) {
-        // ✅ valid credentials – go to dashboard
         goDashboard();
       } else {
         setError(data.message || "Login failed");
@@ -57,9 +63,15 @@ const Login = () => {
     }
   };
 
+  /* tailwind helpers for the e-mail field */
+  const emailInputClasses =
+    `appearance-none block w-full px-3 py-2 border rounded-md 
+     ${email && !emailValid ? "border-red-500 placeholder-red-400 focus:ring-red-500 focus:border-red-500" 
+                            : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"}`;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      {/* ---------- header ---------- */}
+      {/* header */}
       <div className={`sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 ${
         isVisible ? "translate-y-0 opacity-100" : "-translate-y-8 opacity-0"
       }`}>
@@ -76,7 +88,7 @@ const Login = () => {
         </p>
       </div>
 
-      {/* ---------- card ---------- */}
+      {/* card */}
       <div className={`mt-8 sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 ${
         isVisible ? "translate-y-0 opacity-100 scale-100" : "translate-y-8 opacity-0 scale-95"
       }`}>
@@ -84,18 +96,21 @@ const Login = () => {
           onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
           className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 space-y-6"
         >
-          {/* identifier */}
+          {/* e-mail */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email address or username
+              Email address
             </label>
             <input
               type="text"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={emailInputClasses}
               placeholder="you@example.com"
             />
+            {!emailValid && email && (
+              <p className="text-red-600 text-xs mt-1">Enter a valid e-mail.</p>
+            )}
           </div>
 
           {/* password */}
@@ -107,7 +122,7 @@ const Login = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md"
+              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               placeholder="••••••••"
             />
           </div>
