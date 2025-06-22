@@ -75,7 +75,7 @@ Location: ${cityKey}
 Budget: $${budget?.min ?? "?"} to $${budget?.max ?? "?"} per month.
 Preferences: ${prefs}
 Please recommend the top 5-10 rentals for a student, justifying your picks, and include the title and link. Be concise and helpful.
-Format it in a JSON array like this:
+Format it in a JSON array like this without the "\`\`\` part":
 [
   {
     "title": "Address (shortned pls)",
