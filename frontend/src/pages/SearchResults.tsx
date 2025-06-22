@@ -48,7 +48,8 @@ const SearchResults = () => {
     priceRange: [0, 2000],
     propertyType: "",
     bedrooms: "",
-    amenities: [] as string[]
+    amenities: [],
+    sortBy: ""
   });
 
   const resultsPerPage = 9;
@@ -205,6 +206,30 @@ const SearchResults = () => {
             resultAmenity.includes(amenity.toLowerCase())
           )
         );
+      });
+    }
+
+    // Sort results
+    if (filters.sortBy) {
+      filtered.sort((a, b) => {
+        switch (filters.sortBy) {
+          case 'price-asc':
+            const priceA = parseFloat(a.Price.replace(/[^0-9.]/g, '')) || 0;
+            const priceB = parseFloat(b.Price.replace(/[^0-9.]/g, '')) || 0;
+            return priceA - priceB;
+          case 'price-desc':
+            const priceC = parseFloat(a.Price.replace(/[^0-9.]/g, '')) || 0;
+            const priceD = parseFloat(b.Price.replace(/[^0-9.]/g, '')) || 0;
+            return priceD - priceC;
+          case 'rating':
+            // For now, use a default rating of 4.5 for all properties
+            return 0; // Could be enhanced with actual rating data
+          case 'newest':
+            // For now, maintain original order
+            return 0; // Could be enhanced with actual date data
+          default:
+            return 0;
+        }
       });
     }
 
@@ -525,4 +550,4 @@ const SearchResults = () => {
   );
 };
 
-export default SearchResults; 
+export default SearchResults;
