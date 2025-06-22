@@ -34,7 +34,7 @@ const Login = () => {
     setLoading(true);
     try {
       console.log("🔸 sending POST /api/login");
-      const res = await fetch("/api/login", {
+      const res = await fetch("https://spurhacks-ashj.vercel.app/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
