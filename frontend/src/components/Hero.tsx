@@ -357,7 +357,7 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
 
           {/* Loading indicator */}
           {loading && (
-            <div className="mt-6 max-w-3xl mx-auto bg-white/90 rounded-xl p-6 shadow-xl text-gray-800 transform transition-all duration-500 animate-pulse">
+            <div className="mt-6 max-w-3xl mx-auto bg-white/90 rounded-xl p-6 shadow-xl text-gray-800 transform transition-all duration-500">
               <div className="flex items-center justify-center gap-3">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
                 <div className="text-center">
@@ -367,9 +367,9 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
               </div>
               <div className="mt-4 flex justify-center">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
                 </div>
               </div>
             </div>

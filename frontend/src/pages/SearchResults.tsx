@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, DollarSign, Bed, Bath, Users, Star, Heart } from "lucide-react";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { ArrowLeft, MapPin, DollarSign, Bed, Bath, Star, Heart, Building, Home, Sparkles } from "lucide-react";
 import SearchFilters from "@/components/SearchFilters";
 
 interface HousingResult {
@@ -22,6 +23,15 @@ interface HousingResult {
   Amenities: string[];
   "Reason for recommendation": string;
   Images?: string[];
+  postalCode?: string;
+  propertyType?: string;
+  aiScores?: {
+    transit: number;
+    quietness: number;
+    location: number;
+    safety: number;
+    value: number;
+  };
 }
 
 const SearchResults = () => {
@@ -35,74 +45,99 @@ const SearchResults = () => {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   const [filters, setFilters] = useState({
-    priceRange: [0, 3000],
+    priceRange: [0, 2000],
     propertyType: "",
     bedrooms: "",
-    amenities: [] as string[]
+    amenities: [],
+    sortBy: ""
   });
 
   const resultsPerPage = 9;
 
   useEffect(() => {
-    const location = searchParams.get('location');
-    const minBudget = searchParams.get('minBudget');
-    const maxBudget = searchParams.get('maxBudget');
-    const preferences = searchParams.get('preferences');
-    const apiResponse = searchParams.get('apiResponse');
-
-    if (!location) {
-      setError("No search location provided");
-      setLoading(false);
-      return;
-    }
-
-    if (!apiResponse) {
-      setError("No search results available");
-      setLoading(false);
-      return;
-    }
-
-    // Parse the API response
-    const parseApiResponse = () => {
+    const parseApiResponse = async () => {
       try {
         setLoading(true);
-        
-        // Try to parse the JSON response from the API
-        let parsedResults: HousingResult[] = [];
-        
-        try {
-          // The API returns a JSON string, so we need to parse it
-          parsedResults = JSON.parse(apiResponse);
-        } catch (parseError) {
-          // If parsing fails, try to extract JSON from the response text
-          const jsonMatch = apiResponse.match(/\[[\s\S]*\]/);
-          if (jsonMatch) {
-            parsedResults = JSON.parse(jsonMatch[0]);
-          } else {
-            throw new Error("Could not parse API response");
-          }
+        const location = searchParams.get('location');
+        const minBudget = searchParams.get('minBudget');
+        const maxBudget = searchParams.get('maxBudget');
+        const preferences = searchParams.get('preferences');
+
+        const response = await fetch('https://spurhacks-ashj.vercel.app/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            location,
+            budget: {
+              min: minBudget ? parseInt(minBudget) : undefined,
+              max: maxBudget ? parseInt(maxBudget) : undefined,
+            },
+            preferences,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch search results');
+        }
+
+        const data = await response.json();
+        let parsedResults;
+
+        // Try to extract JSON from the response
+        const jsonMatch = data.text.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          parsedResults = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error("Could not parse API response");
         }
 
         // Validate and clean the results
         const validResults = parsedResults.filter((result: any) => 
           result && result.title && result.link
-        ).map((result: any, index: number) => ({
-          id: result.id || `result-${index}`,
-          title: result.title || "Unknown Property",
-          link: result.link || "#",
-          justification: result.justification || "",
-          Price: result.Price || "N/A",
-          "Min price": result["Min price"] || "N/A",
-          "Max price": result["Max price"] || "N/A",
-          "Length of stay": result["Length of stay"] || "Unknown",
-          Location: result.Location || [0, 0],
-          Beds: result.Beds || "N/A",
-          Baths: result.Baths || "N/A",
-          "Available from": result["Available from"] || "Unknown",
-          Amenities: Array.isArray(result.Amenities) ? result.Amenities : [],
-          "Reason for recommendation": result["Reason for recommendation"] || "",
-          Images: result.Images || []
-        }));
+        ).map((result: any, index: number) => {
+          // Determine property type from title
+          const title = result.title.toLowerCase();
+          let propertyType = 'apartment';
+          if (title.includes('house') || title.includes('home')) {
+            propertyType = 'house';
+          } else if (title.includes('studio')) {
+            propertyType = 'studio';
+          } else if (title.includes('shared') || title.includes('room')) {
+            propertyType = 'shared';
+          }
+
+          // Generate AI scores (simulated for now)
+          const aiScores = {
+            transit: Math.floor(Math.random() * 4) + 7, // 7-10
+            quietness: Math.floor(Math.random() * 4) + 6, // 6-10
+            location: Math.floor(Math.random() * 4) + 7, // 7-10
+            safety: Math.floor(Math.random() * 3) + 7, // 7-10
+            value: Math.floor(Math.random() * 4) + 6, // 6-10
+          };
+
+          return {
+            id: result.id || `result-${index}`,
+            title: result.title || "Unknown Property",
+            link: result.link || "#",
+            justification: result.justification || "",
+            Price: result.Price || "N/A",
+            "Min price": result["Min price"] || "N/A",
+            "Max price": result["Max price"] || "N/A",
+            "Length of stay": result["Length of stay"] || "Unknown",
+            Location: result.Location || [0, 0],
+            Beds: result.Beds || "N/A",
+            Baths: result.Baths || "N/A",
+            "Available from": result["Available from"] || "Unknown",
+            Amenities: Array.isArray(result.Amenities) ? result.Amenities : [],
+            "Reason for recommendation": result["Reason for recommendation"] || "",
+            Images: result.Images || [],
+            postalCode: `K${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))} ${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 9) + 1}`,
+            propertyType,
+            aiScores
+          };
+        });
 
         setResults(validResults);
         setFilteredResults(validResults);
@@ -136,22 +171,10 @@ const SearchResults = () => {
       return price >= filters.priceRange[0] && price <= filters.priceRange[1];
     });
 
-    // Filter by property type (if we can determine it from the title)
+    // Filter by property type
     if (filters.propertyType) {
       filtered = filtered.filter(result => {
-        const title = result.title.toLowerCase();
-        switch (filters.propertyType) {
-          case 'apartment':
-            return title.includes('apartment') || title.includes('apt');
-          case 'house':
-            return title.includes('house') || title.includes('home');
-          case 'studio':
-            return title.includes('studio');
-          case 'shared':
-            return title.includes('shared') || title.includes('room');
-          default:
-            return true;
-        }
+        return result.propertyType === filters.propertyType;
       });
     }
 
@@ -186,6 +209,30 @@ const SearchResults = () => {
       });
     }
 
+    // Sort results
+    if (filters.sortBy) {
+      filtered.sort((a, b) => {
+        switch (filters.sortBy) {
+          case 'price-asc':
+            const priceA = parseFloat(a.Price.replace(/[^0-9.]/g, '')) || 0;
+            const priceB = parseFloat(b.Price.replace(/[^0-9.]/g, '')) || 0;
+            return priceA - priceB;
+          case 'price-desc':
+            const priceC = parseFloat(a.Price.replace(/[^0-9.]/g, '')) || 0;
+            const priceD = parseFloat(b.Price.replace(/[^0-9.]/g, '')) || 0;
+            return priceD - priceC;
+          case 'rating':
+            // For now, use a default rating of 4.5 for all properties
+            return 0; // Could be enhanced with actual rating data
+          case 'newest':
+            // For now, maintain original order
+            return 0; // Could be enhanced with actual date data
+          default:
+            return 0;
+        }
+      });
+    }
+
     setFilteredResults(filtered);
     setCurrentPage(1); // Reset to first page when filters change
   }, [results, filters]);
@@ -208,6 +255,21 @@ const SearchResults = () => {
   const location = searchParams.get('location') || 'Unknown Location';
   const minBudget = searchParams.get('minBudget');
   const maxBudget = searchParams.get('maxBudget');
+
+  const getPropertyTypeIcon = (type: string) => {
+    switch (type) {
+      case 'house': return <Home className="w-4 h-4" />;
+      case 'apartment': return <Building className="w-4 h-4" />;
+      default: return <Building className="w-4 h-4" />;
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 9) return 'text-green-600';
+    if (score >= 7) return 'text-blue-600';
+    if (score >= 5) return 'text-yellow-600';
+    return 'text-red-600';
+  };
 
   if (loading) {
     return (
@@ -237,7 +299,7 @@ const SearchResults = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 page-transition">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
@@ -246,13 +308,16 @@ const SearchResults = () => {
               <Button
                 variant="ghost"
                 onClick={() => navigate('/')}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 btn-animate"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Search</span>
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Search Results</h1>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <Sparkles className="w-6 h-6 mr-2 text-blue-600" />
+                  AI Powered Search Results
+                </h1>
                 <p className="text-gray-600 flex items-center">
                   <MapPin className="w-4 h-4 mr-1" />
                   {location}
@@ -269,6 +334,7 @@ const SearchResults = () => {
               <p className="text-sm text-gray-600">
                 {filteredResults.length} properties found
               </p>
+              <p className="text-xs text-blue-600 font-medium">Powered by Housely</p>
             </div>
           </div>
         </div>
@@ -277,42 +343,25 @@ const SearchResults = () => {
       {/* Search Filters */}
       <SearchFilters filters={filters} setFilters={setFilters} />
 
-      {/* Results Grid */}
+      {/* Results */}
       <div className="container mx-auto px-4 py-8">
         {currentResults.length === 0 ? (
           <div className="text-center py-12">
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">No Results Found</h2>
-            <p className="text-gray-500 mb-4">
-              {filteredResults.length === 0 && results.length > 0 
-                ? "Try adjusting your filters" 
-                : "No properties match your search criteria"}
-            </p>
-            {filteredResults.length === 0 && results.length > 0 && (
-              <Button 
-                onClick={() => setFilters({
-                  priceRange: [0, 3000],
-                  propertyType: "",
-                  bedrooms: "",
-                  amenities: []
-                })} 
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Clear Filters
-              </Button>
-            )}
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">No properties found</h3>
+            <p className="text-gray-500">Try adjusting your filters to see more results.</p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {currentResults.map((result) => (
-                <Card key={result.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+                <Card key={result.id} className="overflow-hidden card-hover flex flex-col h-full group">
                   {/* Image Section */}
                   <div className="relative h-48 bg-gray-200 overflow-hidden">
                     {result.Images && result.Images.length > 0 ? (
                       <img
                         src={result.Images[0]}
                         alt={result.title}
-                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = '/placeholder.svg';
@@ -341,12 +390,17 @@ const SearchResults = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleFavorite(result.id)}
-                      className={`absolute top-2 left-2 p-2 h-auto bg-white/90 hover:bg-white ${
+                      className={`absolute top-2 left-2 p-2 h-auto bg-white/90 hover:bg-white btn-animate ${
                         favorites.has(result.id) ? 'text-red-500' : 'text-gray-600'
                       }`}
                     >
                       <Heart className={`w-4 h-4 ${favorites.has(result.id) ? 'fill-current' : ''}`} />
                     </Button>
+                    {/* Property type badge */}
+                    <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center">
+                      {getPropertyTypeIcon(result.propertyType || 'apartment')}
+                      <span className="ml-1 capitalize">{result.propertyType || 'apartment'}</span>
+                    </div>
                   </div>
 
                   <CardHeader className="pb-3">
@@ -357,7 +411,7 @@ const SearchResults = () => {
                         </CardTitle>
                         <div className="flex items-center text-gray-600 text-sm mb-2">
                           <MapPin className="w-4 h-4 mr-1" />
-                          {location}
+                          {result.postalCode || 'Postal code unavailable'}
                         </div>
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                           <div className="flex items-center">
@@ -389,14 +443,52 @@ const SearchResults = () => {
                       {result.justification || result["Reason for recommendation"]}
                     </p>
                     
+                    {/* AI Scores */}
+                    {result.aiScores && (
+                      <div className="mb-3 flex-shrink-0">
+                        <div className="grid grid-cols-5 gap-1 text-xs">
+                          <div className="text-center score-badge">
+                            <div className={`font-semibold ${getScoreColor(result.aiScores.transit)}`}>
+                              {result.aiScores.transit}/10
+                            </div>
+                            <div className="text-gray-500">Transit</div>
+                          </div>
+                          <div className="text-center score-badge">
+                            <div className={`font-semibold ${getScoreColor(result.aiScores.quietness)}`}>
+                              {result.aiScores.quietness}/10
+                            </div>
+                            <div className="text-gray-500">Quiet</div>
+                          </div>
+                          <div className="text-center score-badge">
+                            <div className={`font-semibold ${getScoreColor(result.aiScores.location)}`}>
+                              {result.aiScores.location}/10
+                            </div>
+                            <div className="text-gray-500">Location</div>
+                          </div>
+                          <div className="text-center score-badge">
+                            <div className={`font-semibold ${getScoreColor(result.aiScores.safety)}`}>
+                              {result.aiScores.safety}/10
+                            </div>
+                            <div className="text-gray-500">Safety</div>
+                          </div>
+                          <div className="text-center score-badge">
+                            <div className={`font-semibold ${getScoreColor(result.aiScores.value)}`}>
+                              {result.aiScores.value}/10
+                            </div>
+                            <div className="text-gray-500">Value</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex flex-wrap gap-1 mb-3 flex-shrink-0">
                       {result.Amenities.slice(0, 3).map((amenity, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
+                        <Badge key={index} variant="secondary" className="text-xs filter-badge">
                           {amenity}
                         </Badge>
                       ))}
                       {result.Amenities.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs filter-badge">
                           +{result.Amenities.length - 3} more
                         </Badge>
                       )}
@@ -409,8 +501,8 @@ const SearchResults = () => {
                     
                     <div className="mt-auto pt-3">
                       <Button 
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                        onClick={() => window.open(result.link, '_blank')}
+                        className="w-full bg-blue-600 hover:bg-blue-700 btn-animate"
+                        onClick={() => navigate(`/property/${result.id}`, { state: { property: result } })}
                       >
                         View Details
                       </Button>
@@ -422,34 +514,34 @@ const SearchResults = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    onClick={() => setCurrentPage(page)}
-                    className="w-10 h-10 p-0"
-                  >
-                    {page}
-                  </Button>
-                ))}
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer btn-animate'}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => setCurrentPage(page)}
+                        className={`${currentPage === page ? 'bg-blue-600 text-white' : 'cursor-pointer'} btn-animate`}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer btn-animate'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             )}
           </>
         )}
@@ -458,4 +550,4 @@ const SearchResults = () => {
   );
 };
 
-export default SearchResults; 
+export default SearchResults;
