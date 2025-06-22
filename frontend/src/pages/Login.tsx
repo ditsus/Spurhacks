@@ -3,8 +3,8 @@ import { Home } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const Login = () => {
-  /* UI + form state */
-  const [isVisible, setIsVisible] = useState(false);
+  /* ---------- UI / form state ---------- */
+  const [isVisible,  setIsVisible]  = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [password,   setPassword]   = useState("");
   const [loading,    setLoading]    = useState(false);
@@ -17,12 +17,12 @@ const Login = () => {
     return () => clearTimeout(t);
   }, []);
 
-  /* -------------------- navigation helpers ----------------- */
-  const goHome    = () => (window.location.href = "/");
-  const goRegister= () => (window.location.href = "/register");
+  /* nav helpers */
+  const goHome     = () => (window.location.href = "/");
+  const goRegister = () => (window.location.href = "/register");
   const goDashboard= () => (window.location.href = "/dashboard");
 
-  /* submit handler */
+  /* submit */
   const handleSubmit = async () => {
     setError(null);
 
@@ -33,8 +33,7 @@ const Login = () => {
 
     setLoading(true);
     try {
-      console.log("🔸 sending POST /api/login");
-      const res = await fetch("https://spurhacks-ashj.vercel.app/api/login", {
+      const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
@@ -46,7 +45,8 @@ const Login = () => {
       const data = await res.json();
 
       if (res.ok) {
-        window.location.href = "/";
+        // ✅ valid credentials – go to dashboard
+        goDashboard();
       } else {
         setError(data.message || "Login failed");
       }
@@ -57,10 +57,9 @@ const Login = () => {
     }
   };
 
-  /* render */
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      {/* header */}
+      {/* ---------- header ---------- */}
       <div className={`sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 ${
         isVisible ? "translate-y-0 opacity-100" : "-translate-y-8 opacity-0"
       }`}>
@@ -77,12 +76,14 @@ const Login = () => {
         </p>
       </div>
 
-      {/* card */}
+      {/* ---------- card ---------- */}
       <div className={`mt-8 sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 ${
         isVisible ? "translate-y-0 opacity-100 scale-100" : "translate-y-8 opacity-0 scale-95"
       }`}>
-        {/* NOTE: no action/method on the form */}
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 space-y-6">
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
+          className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 space-y-6"
+        >
           {/* identifier */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -114,7 +115,7 @@ const Login = () => {
           {/* remember / forgot */}
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <input type="checkbox" className="h-4 w-4 text-blue-600 border-gray-300 rounded"/>
+              <input type="checkbox" className="h-4 w-4 text-blue-600 border-gray-300 rounded" />
               <span className="ml-2 text-sm text-gray-900">Remember me</span>
             </div>
             <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-500">
@@ -126,30 +127,18 @@ const Login = () => {
           {error && <div className="text-center text-red-600 text-sm">{error}</div>}
 
           {/* submit */}
-          <div className={`transform transition-all duration-500 delay-900 ${
-            isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-          }`}>
-            <Button
-              type="submit"
-              disabled={loading}
-              onClick={goDashboard}
-              className="w-full bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 active:scale-95"
-            >
-              {loading ? "Signing in…" : "Sign in"}
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 active:scale-95"
+          >
+            {loading ? "Signing in…" : "Sign in"}
+          </Button>
 
-          {/* divider + create account */}
-          <div className="mt-6">
-            <div className={`relative transform transition-all duration-500 delay-1000 ${
-              isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
-            }`}>
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or</span>
-              </div>
+          {/* divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-white text-gray-500">Or</span>
@@ -162,7 +151,7 @@ const Login = () => {
           <Button variant="ghost" onClick={goHome} className="w-full">
             ← Back to Home
           </Button>
-        </div>
+        </form>
       </div>
     </div>
   );
