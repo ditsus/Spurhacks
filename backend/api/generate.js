@@ -84,13 +84,15 @@ Format it in a JSON array like this without the "\`\`\` part":
     "Price": $xxxx.xx,
     "Min price": $xxxx.xx,
     "Max price": $xxxx.xx,
-    "Location": [longitude, latitude],
+    "Location": [longitude, latitude], <- make it in decimal format like [80.3,-4.2]
     "Beds": x beds",
     "Baths: x baths"
     "Available from": "YYYY-MM-DD",
-    "Amenities": ["amenity1", "wifi", ...]
+    "Amenities": ["amenity1", "wifi", ...] <- heater, ac, etc...
     "Reason for recommendation": "Concise reason why this rental is a good fit for the user",
-    "Images": ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
+    "Images": ["https://example.com/image1.jpg", "https://example.com/image2.jpg", etc],
+    "Postal Code": "Postal Code",
+    "Apartment/House": "Apartment/House",
   },
   `;
   console.log('Prompt length:', prompt.length);

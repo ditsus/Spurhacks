@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Sparkles } from "lucide-react";
 
 interface FilterProps {
   filters: {
@@ -35,34 +34,46 @@ const SearchFilters = ({ filters, setFilters }: FilterProps) => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Card className="p-6">
+      <Card className="p-6 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Filter Properties</h2>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="md:hidden"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </Button>
+          <div className="flex items-center">
+            <Sparkles className="w-5 h-5 mr-2 text-blue-600" />
+            <h2 className="text-xl font-semibold text-gray-900">AI-Powered Filters</h2>
+          </div>
+          <div className="flex items-center space-x-2">
+            <p className="text-xs text-blue-600 font-medium">Powered by Housely</p>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="md:hidden"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
+          </div>
         </div>
 
         <div className={`space-y-6 ${showFilters ? 'block' : 'hidden md:block'}`}>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Price Range */}
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-2">
                 Price Range: ${filters.priceRange[0]} - ${filters.priceRange[1]}
               </label>
-              <Slider
-                value={filters.priceRange}
-                onValueChange={(value) => setFilters({ ...filters, priceRange: value })}
-                max={3000}
-                min={200}
-                step={50}
-                className="w-full"
-              />
+              <div className="relative">
+                <Slider
+                  value={filters.priceRange}
+                  onValueChange={(value) => setFilters({ ...filters, priceRange: value })}
+                  max={3000}
+                  min={200}
+                  step={50}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>${filters.priceRange[0]}</span>
+                  <span>${filters.priceRange[1]}</span>
+                </div>
+              </div>
             </div>
 
             {/* Property Type */}
@@ -102,21 +113,28 @@ const SearchFilters = ({ filters, setFilters }: FilterProps) => {
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            {/* Clear Filters */}
-            <div className="flex items-end">
-              <Button
-                variant="outline"
-                onClick={() => setFilters({
-                  priceRange: [0, 2000],
-                  propertyType: "",
-                  bedrooms: "",
-                  amenities: []
-                })}
-                className="w-full"
-              >
-                Clear All
-              </Button>
+          {/* Clear Filters */}
+          <div className="flex justify-between items-center">
+            <Button
+              variant="outline"
+              onClick={() => setFilters({
+                priceRange: [0, 2000],
+                propertyType: "",
+                bedrooms: "",
+                amenities: []
+              })}
+              className="hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Clear All Filters
+            </Button>
+            
+            <div className="text-right">
+              <p className="text-sm text-gray-600">
+                {filters.amenities.length > 0 && `${filters.amenities.length} amenities selected`}
+              </p>
             </div>
           </div>
 
@@ -128,7 +146,11 @@ const SearchFilters = ({ filters, setFilters }: FilterProps) => {
                 <Badge
                   key={amenity}
                   variant={filters.amenities.includes(amenity) ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-blue-100 transition-colors"
+                  className={`cursor-pointer transition-all duration-200 hover:scale-105 ${
+                    filters.amenities.includes(amenity) 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : 'hover:bg-blue-50 hover:border-blue-200'
+                  }`}
                   onClick={() => toggleAmenity(amenity)}
                 >
                   {amenity}

@@ -21,7 +21,8 @@ import {
   DollarSign,
   Check,
   X,
-  Lightbulb
+  Lightbulb,
+  Sparkles
 } from 'lucide-react';
 
 interface PropertyAnalysis {
@@ -136,7 +137,7 @@ const PropertyDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 page-transition">
       {/* Header */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
@@ -145,7 +146,7 @@ const PropertyDetails = () => {
               <Button
                 variant="ghost"
                 onClick={() => navigate(-1)}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 btn-animate"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Results</span>
@@ -161,7 +162,7 @@ const PropertyDetails = () => {
             <Button
               variant="ghost"
               onClick={toggleFavorite}
-              className={`p-2 ${favorites.has(property.id) ? 'text-red-500' : 'text-gray-400'}`}
+              className={`p-2 btn-animate ${favorites.has(property.id) ? 'text-red-500' : 'text-gray-400'}`}
             >
               <Heart className={`w-6 h-6 ${favorites.has(property.id) ? 'fill-current' : ''}`} />
             </Button>
@@ -174,14 +175,14 @@ const PropertyDetails = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Image Carousel */}
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden card-hover">
               <div className="relative h-96 bg-gray-200">
                 {property.Images && property.Images.length > 0 ? (
                   <>
                     <img
                       src={property.Images[currentImageIndex]}
                       alt={`${property.title} - Image ${currentImageIndex + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover carousel-slide"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = '/placeholder.svg';
@@ -194,7 +195,7 @@ const PropertyDetails = () => {
                           variant="ghost"
                           size="sm"
                           onClick={prevImage}
-                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white"
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white btn-animate"
                         >
                           <ChevronLeft className="w-6 h-6" />
                         </Button>
@@ -202,7 +203,7 @@ const PropertyDetails = () => {
                           variant="ghost"
                           size="sm"
                           onClick={nextImage}
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white"
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white btn-animate"
                         >
                           <ChevronRight className="w-6 h-6" />
                         </Button>
@@ -235,7 +236,7 @@ const PropertyDetails = () => {
                       <button
                         key={index}
                         onClick={() => setCurrentImageIndex(index)}
-                        className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${
+                        className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 btn-animate ${
                           index === currentImageIndex ? 'border-blue-500' : 'border-gray-200'
                         }`}
                       >
@@ -256,7 +257,7 @@ const PropertyDetails = () => {
             </Card>
 
             {/* Property Details */}
-            <Card>
+            <Card className="card-hover">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Property Details</span>
@@ -302,7 +303,7 @@ const PropertyDetails = () => {
                   <h3 className="font-semibold mb-2">Amenities</h3>
                   <div className="flex flex-wrap gap-2">
                     {property.Amenities.map((amenity, index) => (
-                      <Badge key={index} variant="secondary">
+                      <Badge key={index} variant="secondary" className="filter-badge">
                         {amenity}
                       </Badge>
                     ))}
@@ -315,12 +316,52 @@ const PropertyDetails = () => {
                     {property.justification || property["Reason for recommendation"] || "No description available."}
                   </p>
                 </div>
+
+                {/* AI Powered Description */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border-l-4 border-blue-500">
+                  <h3 className="font-semibold mb-2 flex items-center">
+                    <Sparkles className="w-5 h-5 mr-2 text-blue-600" />
+                    AI Powered Description
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    {property.aiScores ? 
+                      `This ${property.propertyType || 'property'} offers excellent value with a ${property.aiScores.value}/10 value rating. Located in a ${property.aiScores.location}/10 location with ${property.aiScores.transit}/10 transit accessibility, it's perfect for students seeking convenience and comfort. The area maintains a ${property.aiScores.quietness}/10 quietness level, ideal for studying, while providing ${property.aiScores.safety}/10 safety rating for peace of mind.` :
+                      "AI analysis is being generated for this property..."
+                    }
+                  </p>
+                  
+                  {/* Quick Scores */}
+                  {property.aiScores && (
+                    <div className="mt-3 grid grid-cols-5 gap-2">
+                      <div className="text-center p-2 bg-white rounded-lg shadow-sm score-badge">
+                        <div className="text-lg font-bold text-blue-600">{property.aiScores.transit}/10</div>
+                        <div className="text-xs text-gray-600">🚌 Transit</div>
+                      </div>
+                      <div className="text-center p-2 bg-white rounded-lg shadow-sm score-badge">
+                        <div className="text-lg font-bold text-green-600">{property.aiScores.quietness}/10</div>
+                        <div className="text-xs text-gray-600">🔇 Quiet</div>
+                      </div>
+                      <div className="text-center p-2 bg-white rounded-lg shadow-sm score-badge">
+                        <div className="text-lg font-bold text-purple-600">{property.aiScores.location}/10</div>
+                        <div className="text-xs text-gray-600">📍 Location</div>
+                      </div>
+                      <div className="text-center p-2 bg-white rounded-lg shadow-sm score-badge">
+                        <div className="text-lg font-bold text-orange-600">{property.aiScores.safety}/10</div>
+                        <div className="text-xs text-gray-600">🛡️ Safety</div>
+                      </div>
+                      <div className="text-center p-2 bg-white rounded-lg shadow-sm score-badge">
+                        <div className="text-lg font-bold text-emerald-600">{property.aiScores.value}/10</div>
+                        <div className="text-xs text-gray-600">💰 Value</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
             {/* AI Analysis */}
             {analysis && (
-              <Card>
+              <Card className="card-hover">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Lightbulb className="w-5 h-5 mr-2 text-blue-600" />
@@ -410,19 +451,19 @@ const PropertyDetails = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Contact & Actions */}
-            <Card>
+            <Card className="card-hover">
               <CardContent className="p-6">
                 <div className="space-y-4">
                   <Button 
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className="w-full bg-blue-600 hover:bg-blue-700 btn-animate"
                     onClick={() => window.open(property.link, '_blank')}
                   >
                     Contact Property Manager
                   </Button>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full btn-animate">
                     Schedule Viewing
                   </Button>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full btn-animate">
                     Save to Favorites
                   </Button>
                 </div>
@@ -430,7 +471,7 @@ const PropertyDetails = () => {
             </Card>
 
             {/* Map */}
-            <Card>
+            <Card className="card-hover">
               <CardHeader>
                 <CardTitle>Location</CardTitle>
               </CardHeader>
