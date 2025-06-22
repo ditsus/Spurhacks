@@ -20,8 +20,8 @@ app.use(express.json());
 const allowedOrigins = [
   'https://www.housesnear.us',    // production
   'http://localhost:8080',        // local dev
-  'https://housely-git-cursor-victorhlsus-projects.vercel.app/',
-  
+  'https://housely-git-cursor-victorhlsus-projects.vercel.app',
+
 ];
 
 app.use(
