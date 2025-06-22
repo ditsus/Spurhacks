@@ -99,7 +99,7 @@ Format it in a JSON array like this without the "\`\`\` part":
   console.log('Prompt sent to Gemini:', prompt.substring(0, 1000), filteredRentals.length > 20 ? '...[truncated]' : '');
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const result = await model.generateContent(prompt);
     const text = result.response.text();
     console.log('Gemini response (start):', text.substring(0, 200));
