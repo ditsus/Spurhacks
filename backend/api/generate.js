@@ -80,10 +80,10 @@ Format it in a JSON array like this without the "\`\`\` part":
   {
     "title": "Address (shortned pls)",
     "link": "https://example.com/rental-link",
-    "Description of house": "Description",
-    "Price": $xxxx.xx,
-    "Min price": $xxxx.xx,
-    "Max price": $xxxx.xx,
+    "Description of house": "Description"
+    "Price": $xxxx,
+    "Min price": $xxxx,
+    "Max price": $xxxx,
     "Location": [longitude, latitude], <- make it in decimal format like [80.3,-4.2] instead of NWSE degree format.
     "Beds": x beds",
     "Baths: x baths"

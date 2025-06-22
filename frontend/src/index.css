@@ -298,3 +298,206 @@ html {
     background-position: 200% 0;
   }
 }
+
+/* Floating House Icons */
+.house-icon {
+  position: absolute;
+  opacity: 0.1;
+  transition: all 0.3s ease;
+}
+
+.house-icon:hover {
+  opacity: 0.3;
+  transform: scale(1.2);
+}
+
+.house-1 {
+  top: 10%;
+  left: 10%;
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.house-2 {
+  top: 20%;
+  right: 15%;
+  animation: float-medium 6s ease-in-out infinite;
+}
+
+.house-3 {
+  bottom: 30%;
+  left: 20%;
+  animation: float-fast 4s ease-in-out infinite;
+}
+
+.house-4 {
+  bottom: 20%;
+  right: 10%;
+  animation: float-slow 7s ease-in-out infinite;
+}
+
+.house-5 {
+  top: 60%;
+  left: 5%;
+  animation: float-medium 5s ease-in-out infinite;
+}
+
+.house-6 {
+  top: 40%;
+  right: 5%;
+  animation: float-fast 3s ease-in-out infinite;
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+@keyframes float-medium {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(-3deg);
+  }
+}
+
+@keyframes float-fast {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+}
+
+/* Background Particles */
+.particles-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  animation: particle-float linear infinite;
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translateY(100vh) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) translateX(100px);
+    opacity: 0;
+  }
+}
+
+/* Enhanced Pulse Glow Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 30px rgba(59, 130, 246, 0.4);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Enhanced Loading Animations */
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 1s ease-in-out infinite;
+}
+
+/* Interactive Background Effects */
+.hero-background {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+              radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
+  animation: background-shift 20s ease-in-out infinite;
+}
+
+@keyframes background-shift {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  33% {
+    transform: scale(1.1) rotate(1deg);
+  }
+  66% {
+    transform: scale(0.9) rotate(-1deg);
+  }
+}
+
+/* Enhanced Form Animations */
+.form-input-focus {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-input-focus:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
+}
+
+/* Loading Stage Transitions */
+.loading-stage {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.loading-stage-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.loading-stage-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.loading-stage-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.loading-stage-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+}
