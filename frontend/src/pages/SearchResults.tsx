@@ -21,6 +21,7 @@ interface HousingResult {
   "Available from": string;
   Amenities: string[];
   "Reason for recommendation": string;
+  Images?: string[];
 }
 
 const SearchResults = () => {
@@ -99,7 +100,8 @@ const SearchResults = () => {
           Baths: result.Baths || "N/A",
           "Available from": result["Available from"] || "Unknown",
           Amenities: Array.isArray(result.Amenities) ? result.Amenities : [],
-          "Reason for recommendation": result["Reason for recommendation"] || ""
+          "Reason for recommendation": result["Reason for recommendation"] || "",
+          Images: result.Images || []
         }));
 
         setResults(validResults);
@@ -304,6 +306,49 @@ const SearchResults = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {currentResults.map((result) => (
                 <Card key={result.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+                  {/* Image Section */}
+                  <div className="relative h-48 bg-gray-200 overflow-hidden">
+                    {result.Images && result.Images.length > 0 ? (
+                      <img
+                        src={result.Images[0]}
+                        alt={result.title}
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder.svg';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                        <div className="text-gray-400 text-center">
+                          <div className="w-12 h-12 mx-auto mb-2 bg-gray-300 rounded-lg flex items-center justify-center">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <p className="text-xs">No image available</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Image count badge */}
+                    {result.Images && result.Images.length > 1 && (
+                      <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+                        +{result.Images.length - 1} more
+                      </div>
+                    )}
+                    {/* Favorite button overlay */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleFavorite(result.id)}
+                      className={`absolute top-2 left-2 p-2 h-auto bg-white/90 hover:bg-white ${
+                        favorites.has(result.id) ? 'text-red-500' : 'text-gray-600'
+                      }`}
+                    >
+                      <Heart className={`w-4 h-4 ${favorites.has(result.id) ? 'fill-current' : ''}`} />
+                    </Button>
+                  </div>
+
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -325,16 +370,6 @@ const SearchResults = () => {
                           </div>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleFavorite(result.id)}
-                        className={`p-2 h-auto ${
-                          favorites.has(result.id) ? 'text-red-500' : 'text-gray-400'
-                        }`}
-                      >
-                        <Heart className={`w-5 h-5 ${favorites.has(result.id) ? 'fill-current' : ''}`} />
-                      </Button>
                     </div>
                   </CardHeader>
                   
