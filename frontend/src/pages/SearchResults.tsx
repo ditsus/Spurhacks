@@ -303,7 +303,7 @@ const SearchResults = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {currentResults.map((result) => (
-                <Card key={result.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <Card key={result.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -338,7 +338,7 @@ const SearchResults = () => {
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 flex-1 flex flex-col">
                     <div className="flex items-center justify-between mb-3">
                       <div className="text-2xl font-bold text-blue-600">
                         {result.Price}
@@ -350,11 +350,11 @@ const SearchResults = () => {
                       </div>
                     </div>
                     
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2 flex-shrink-0">
                       {result.justification || result["Reason for recommendation"]}
                     </p>
                     
-                    <div className="flex flex-wrap gap-1 mb-3">
+                    <div className="flex flex-wrap gap-1 mb-3 flex-shrink-0">
                       {result.Amenities.slice(0, 3).map((amenity, index) => (
                         <Badge key={index} variant="secondary" className="text-xs">
                           {amenity}
@@ -367,17 +367,19 @@ const SearchResults = () => {
                       )}
                     </div>
                     
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3 flex-shrink-0">
                       <span>📅 Available {result["Available from"]}</span>
                       <span>⏱️ {result["Length of stay"]}</span>
                     </div>
                     
-                    <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                      onClick={() => window.open(result.link, '_blank')}
-                    >
-                      View Details
-                    </Button>
+                    <div className="mt-auto pt-3">
+                      <Button 
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        onClick={() => window.open(result.link, '_blank')}
+                      >
+                        View Details
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
