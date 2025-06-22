@@ -1,16 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const Login = () => {
-  /* -------------------- UI / form state -------------------- */
-  const [isVisible,  setIsVisible]  = useState(false);
-  const [identifier, setIdentifier] = useState("");   // email _or_ username
+  /* UI + form state */
+  const [isVisible, setIsVisible] = useState(false);
+  const [identifier, setIdentifier] = useState("");
   const [password,   setPassword]   = useState("");
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState<string | null>(null);
 
-  /* -------------------- intro animation -------------------- */
+  /* intro animation */
   useEffect(() => {
     setIsVisible(false);
     const t = setTimeout(() => setIsVisible(true), 50);
@@ -22,9 +22,8 @@ const Login = () => {
   const goRegister= () => (window.location.href = "/register");
   const goDashboard= () => (window.location.href = "/dashboard");
 
-  /* -------------------- submit handler --------------------- */
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /* submit handler */
+  const handleSubmit = async () => {
     setError(null);
 
     if (!identifier || !password) {
@@ -34,7 +33,8 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const res  = await fetch("/api/login", {
+      console.log("🔸 sending POST /api/login");
+      const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
@@ -46,47 +46,43 @@ const Login = () => {
       const data = await res.json();
 
       if (res.ok) {
-        // (optional) save token / user info here
-        window.location.href = "/";      // ✅ logged in – go home / dashboard
+        window.location.href = "/";
       } else {
         setError(data.message || "Login failed");
       }
     } catch {
-      setError("Network error – please try again");
+      setError("Network error — please try again");
     } finally {
       setLoading(false);
     }
   };
 
-  /* -------------------- JSX -------------------- */
+  /* render */
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      {/* ---------- header ---------- */}
-      <div className={`sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 ease-out ${
+      {/* header */}
+      <div className={`sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 ${
         isVisible ? "translate-y-0 opacity-100" : "-translate-y-8 opacity-0"
       }`}>
         <div className="flex justify-center">
-          <Home className={`h-12 w-12 text-blue-600 transform transition-all duration-500 delay-200 ${
+          <Home className={`h-12 w-12 text-blue-600 transform transition-all duration-500 ${
             isVisible ? "scale-100 rotate-0" : "scale-75 -rotate-12"
           }`} />
         </div>
-        <h2 className={`mt-6 text-center text-3xl font-extrabold text-gray-900 transform transition-all duration-600 delay-300 ${
-          isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-        }`}>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account
         </h2>
-        <p className={`mt-2 text-center text-sm text-gray-600 transform transition-all duration-500 delay-400 ${
-          isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-        }`}>
+        <p className="mt-2 text-center text-sm text-gray-600">
           Welcome back to Housely
         </p>
       </div>
 
-      {/* ---------- card ---------- */}
-      <div className={`mt-8 sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 delay-500 ease-out ${
+      {/* card */}
+      <div className={`mt-8 sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 ${
         isVisible ? "translate-y-0 opacity-100 scale-100" : "translate-y-8 opacity-0 scale-95"
       }`}>
-        <form onSubmit={handleSubmit} className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 space-y-6">
+        {/* NOTE: no action/method on the form */}
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 space-y-6">
           {/* identifier */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -96,7 +92,7 @@ const Login = () => {
               type="text"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 hover:shadow-md focus:shadow-lg"
+              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="you@example.com"
             />
           </div>
@@ -110,23 +106,16 @@ const Login = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200 hover:shadow-md focus:shadow-lg"
-              placeholder="Enter your password"
+              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="••••••••"
             />
           </div>
 
-          {/* remember + forgot */}
-          <div className={`flex items-center justify-between transform transition-all duration-500 delay-800 ${
-            isVisible ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
-          }`}>
+          {/* remember / forgot */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <input
-                type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-all duration-200"
-              />
-              <span className="ml-2 block text-sm text-gray-900">
-                Remember me
-              </span>
+              <input type="checkbox" className="h-4 w-4 text-blue-600 border-gray-300 rounded"/>
+              <span className="ml-2 text-sm text-gray-900">Remember me</span>
             </div>
             <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-500">
               Forgot your password?
@@ -162,33 +151,18 @@ const Login = () => {
                 <span className="px-2 bg-white text-gray-500">Or</span>
               </div>
             </div>
-
-            <div className={`mt-6 transform transition-all duration-500 delay-1100 ${
-              isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-            }`}>
-              <Button
-                variant="outline"
-                onClick={goRegister}
-                className="w-full transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-gray-50"
-              >
-                Create new account
-              </Button>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or</span>
             </div>
           </div>
 
-          {/* back home */}
-          <div className={`mt-6 transform transition-all duration-500 delay-1200 ${
-            isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-          }`}>
-            <Button
-              variant="ghost"
-              onClick={goHome}
-              className="w-full transition-all duration-200 hover:scale-105 active:scale-95"
-            >
-              ← Back to Home
-            </Button>
-          </div>
-        </form>
+          <Button variant="outline" onClick={goRegister} className="w-full">
+            Create new account
+          </Button>
+          <Button variant="ghost" onClick={goHome} className="w-full">
+            ← Back to Home
+          </Button>
+        </div>
       </div>
     </div>
   );

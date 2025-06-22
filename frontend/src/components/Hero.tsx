@@ -61,9 +61,9 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
       budget: { min: budgetRange[0], max: budgetRange[1] },
       preferences: description,
     };
-
+//
     try {
-      const res = await fetch("/api/generate", {
+      const res = await fetch("https://spurhacks-ashj.vercel.app/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
