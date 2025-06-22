@@ -1,12 +1,15 @@
 {
-  "version": 2,
-
-  "name": "homeharvest-backend",
-
-  "builds": [
-    { "src": "Dockerfile", "use": "@vercel/docker" }
-  ],
-  "env": {
-    "PORT": "8080"
-  }
+    "version": 2,
+    "builds": [
+        {
+            "src": "index.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/"
+        }
+    ]
 }
