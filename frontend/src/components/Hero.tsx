@@ -3,6 +3,7 @@ import { Search, MapPin, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "react-router-dom";
 
 interface HeroProps {
   searchQuery: string;
@@ -18,45 +19,33 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
   const maxBudget = 3000;
 
   const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [geminiResponse, setGeminiResponse] = useState("");
   const [error, setError] = useState("");
 
-  // Gemini call
-  const handleSearch = async () => {
-  setLoading(true);
-  setError("");
-  setGeminiResponse("");
+  const navigate = useNavigate();
 
-  // Send the raw values, not a prompt
-  const payload = {
-    location: searchQuery,
-    budget: { min: budgetRange[0], max: budgetRange[1] },
-    preferences: description,
+  // Navigate to listings page with all search info
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      setError("Please enter a location.");
+      return;
+    }
+    setError("");
+    navigate("/listings", {
+      state: {
+        searchQuery,
+        budgetRange,
+        description,
+      },
+    });
   };
 
-  try {
-    const res = await fetch("https://spurhacks-ashj.vercel.app/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error("Backend error");
-    const data = await res.json();
-    setGeminiResponse(data.text || JSON.stringify(data));
-  } catch (err) {
-    setError("Could not connect to backend or Gemini.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  // Budget slider helpers (same as before)
   const getValueFromPosition = useCallback((clientX: number) => {
     if (!sliderRef.current) return minBudget;
     const rect = sliderRef.current.getBoundingClientRect();
     const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const rawValue = minBudget + percentage * (maxBudget - minBudget);
-    return Math.round(rawValue / 50) * 50; // Round to nearest 50
+    return Math.round(rawValue / 50) * 50;
   }, [minBudget, maxBudget]);
 
   const updateBudgetRange = useCallback((newRange: number[]) => {
@@ -163,10 +152,9 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
                 <Button
                   className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-lg font-semibold"
                   onClick={handleSearch}
-                  disabled={loading}
                 >
                   <Search className="mr-2 h-5 w-5" />
-                  {loading ? "Searching..." : "Search"}
+                  Search
                 </Button>
               </div>
               
@@ -277,19 +265,11 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
             </div>
           </div>
 
-          {/* Gemini Response */}
-          {geminiResponse && (
-            <div className="mt-8 max-w-3xl mx-auto bg-white/90 rounded-xl p-6 shadow-xl text-gray-800">
-              <h2 className="font-bold text-lg mb-2 text-blue-700">Gemini Suggestions</h2>
-              <pre className="whitespace-pre-wrap">{geminiResponse}</pre>
-            </div>
-          )}
           {error && (
             <div className="mt-4 max-w-3xl mx-auto bg-red-100 rounded-xl p-4 shadow text-red-700">
               {error}
             </div>
           )}
-
         </div>
       </div>
     </div>
