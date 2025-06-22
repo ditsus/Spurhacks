@@ -34,12 +34,12 @@ const SearchFilters = ({ filters, setFilters }: FilterProps) => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-4">
-      <Card className="p-4 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="flex items-center justify-between mb-4">
+    <div className="container mx-auto px-4 py-2">
+      <Card className="p-3 shadow-md border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
             <Sparkles className="w-4 h-4 mr-2 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">AI-Powered Filters</h2>
+            <h2 className="text-base font-semibold text-gray-900">Filters</h2>
           </div>
           <div className="flex items-center space-x-2">
             <p className="text-xs text-blue-600 font-medium">Powered by Housely</p>
@@ -55,8 +55,8 @@ const SearchFilters = ({ filters, setFilters }: FilterProps) => {
           </div>
         </div>
 
-        <div className={`space-y-4 ${showFilters ? 'block' : 'hidden md:block'}`}>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div className={`space-y-3 ${showFilters ? 'block' : 'hidden md:block'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
             {/* Price Range */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">
@@ -85,7 +85,7 @@ const SearchFilters = ({ filters, setFilters }: FilterProps) => {
                 value={filters.propertyType}
                 onValueChange={(value) => setFilters({ ...filters, propertyType: value })}
               >
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-8">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
@@ -104,7 +104,7 @@ const SearchFilters = ({ filters, setFilters }: FilterProps) => {
                 value={filters.bedrooms}
                 onValueChange={(value) => setFilters({ ...filters, bedrooms: value })}
               >
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-8">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
@@ -123,7 +123,7 @@ const SearchFilters = ({ filters, setFilters }: FilterProps) => {
                 value={filters.sortBy}
                 onValueChange={(value) => setFilters({ ...filters, sortBy: value })}
               >
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-8">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -157,7 +157,7 @@ const SearchFilters = ({ filters, setFilters }: FilterProps) => {
                   amenities: [],
                   sortBy: ""
                 })}
-                className="hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 w-full"
+                className="hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 w-full h-8"
               >
                 <X className="w-3 h-3 mr-1" />
                 Clear
@@ -167,7 +167,7 @@ const SearchFilters = ({ filters, setFilters }: FilterProps) => {
 
           {/* Amenities */}
           <div>
-            <label className="block text-sm font-medium mb-2">Amenities</label>
+            <label className="block text-sm font-medium mb-1">Amenities</label>
             <div className="flex flex-wrap gap-1">
               {amenityOptions.map((amenity) => (
                 <Badge

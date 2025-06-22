@@ -489,7 +489,7 @@ const SearchResults = () => {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center">
                   <Sparkles className="w-6 h-6 mr-2 text-blue-600" />
-                  AI Powered Search Results
+                  Search Results
                 </h1>
                 <p className="text-gray-600 flex items-center">
                   <MapPin className="w-4 h-4 mr-1" />
