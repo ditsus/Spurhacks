@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { ArrowLeft, MapPin, DollarSign, Bed, Bath, Star, Heart, Building, Home, Sparkles, RefreshCw } from "lucide-react";
+import { ArrowLeft, MapPin, DollarSign, Bed, Bath, Star, Heart, Building, Home, Sparkles, RefreshCw, Users } from "lucide-react";
 import SearchFilters from "@/components/SearchFilters";
 import { cleanupOldSearches } from "@/lib/utils";
 
@@ -1131,12 +1131,41 @@ const SearchResults = () => {
                     </div>
                     
                     <div className="mt-auto pt-3">
-                      <Button 
-                        className="w-full bg-blue-600 hover:bg-blue-700 btn-animate"
-                        onClick={() => navigate(`/property/${result.id}`, { state: { property: result } })}
-                      >
-                        View Details
-                      </Button>
+                      <div className="space-y-2">
+                        <Button 
+                          className="w-full bg-blue-600 hover:bg-blue-700 btn-animate"
+                          onClick={() => navigate(`/property/${result.id}`, { state: { property: result } })}
+                        >
+                          View Details
+                        </Button>
+                        
+                        {/* Room Share Button with POP */}
+                        <Button 
+                          variant="outline"
+                          className="w-full relative overflow-hidden group/room-share room-share-gradient border-purple-200 hover:border-purple-400 btn-animate room-share-glow"
+                          onClick={() => {
+                            // Placeholder for room share functionality
+                            console.log('Room share clicked for:', result.id);
+                            // TODO: Implement room share modal/functionality
+                          }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20 opacity-0 group-hover/room-share:opacity-100 transition-opacity duration-300"></div>
+                          <div className="relative flex items-center justify-center space-x-2">
+                            <div className="relative room-share-bounce">
+                              <Users className="w-4 h-4 text-purple-600 group-hover/room-share:scale-110 transition-transform duration-200" />
+                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-pink-500 rounded-full room-share-sparkle"></div>
+                            </div>
+                            <span className="font-semibold text-purple-700 group-hover/room-share:text-purple-800 transition-colors">
+                              Room Share
+                            </span>
+                            <div className="flex space-x-1">
+                              <div className="w-1 h-1 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                              <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                              <div className="w-1 h-1 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                            </div>
+                          </div>
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

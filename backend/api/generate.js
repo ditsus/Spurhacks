@@ -80,7 +80,7 @@ Format it in a JSON array like this without the "\`\`\` part":
   {
     "title": "Address (shortned pls)",
     "link": "https://example.com/rental-link",
-    "Description of house": "Description"
+    "Description of house": "Description",
     "Price": $xxxx,
     "Min price": $xxxx,
     "Max price": $xxxx,

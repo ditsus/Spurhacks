@@ -22,7 +22,10 @@ import {
   Check,
   X,
   Lightbulb,
-  Sparkles
+  Sparkles,
+  Building,
+  Home,
+  Users
 } from 'lucide-react';
 
 interface PropertyAnalysis {
@@ -155,7 +158,10 @@ const PropertyDetails = () => {
                 <h1 className="text-2xl font-bold text-gray-900">{property.title}</h1>
                 <p className="text-gray-600 flex items-center">
                   <MapPin className="w-4 h-4 mr-1" />
-                  {property.Location ? `${property.Location[0]}, ${property.Location[1]}` : 'Location unavailable'}
+                  {property.Location && Array.isArray(property.Location) && property.Location.length === 2 
+                    ? `${property.Location[1]}, ${property.Location[0]}` 
+                    : property.postalCode || 'Location unavailable'
+                  }
                 </p>
               </div>
             </div>
@@ -466,6 +472,33 @@ const PropertyDetails = () => {
                   <Button variant="outline" className="w-full btn-animate">
                     Save to Favorites
                   </Button>
+                  
+                  {/* Room Share Button with POP */}
+                  <Button 
+                    variant="outline"
+                    className="w-full relative overflow-hidden group/room-share room-share-gradient border-purple-200 hover:border-purple-400 btn-animate room-share-glow"
+                    onClick={() => {
+                      // Placeholder for room share functionality
+                      console.log('Room share clicked for:', property.id);
+                      // TODO: Implement room share modal/functionality
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20 opacity-0 group-hover/room-share:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative flex items-center justify-center space-x-2">
+                      <div className="relative room-share-bounce">
+                        <Users className="w-4 h-4 text-purple-600 group-hover/room-share:scale-110 transition-transform duration-200" />
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-pink-500 rounded-full room-share-sparkle"></div>
+                      </div>
+                      <span className="font-semibold text-purple-700 group-hover/room-share:text-purple-800 transition-colors">
+                        Room Share
+                      </span>
+                      <div className="flex space-x-1">
+                        <div className="w-1 h-1 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-1 h-1 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    </div>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -476,7 +509,7 @@ const PropertyDetails = () => {
                 <CardTitle>Location</CardTitle>
               </CardHeader>
               <CardContent>
-                {property.Location ? (
+                {property.Location && Array.isArray(property.Location) && property.Location.length === 2 ? (
                   <div className="h-64 rounded-lg overflow-hidden">
                     <iframe
                       width="100%"
@@ -484,7 +517,7 @@ const PropertyDetails = () => {
                       style={{ border: 0 }}
                       loading="lazy"
                       allowFullScreen
-                      src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyAgL_9nwW6Xz4D1zyVi9XgZa0hrWkSG46M&q=${property.Location[0]},${property.Location[1]}`}
+                      src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyAgL_9nwW6Xz4D1zyVi9XgZa0hrWkSG46M&q=${property.Location[1]},${property.Location[0]}`}
                     />
                   </div>
                 ) : (

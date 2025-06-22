@@ -500,4 +500,65 @@ html {
 .loading-stage-exit-active {
   opacity: 0;
   transform: translateY(-10px);
+  transition: all 0.3s ease-out;
+}
+
+/* Room Share Button Animations */
+.room-share-glow {
+  animation: roomShareGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes roomShareGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(147, 51, 234, 0.3), 0 0 10px rgba(147, 51, 234, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(147, 51, 234, 0.5), 0 0 25px rgba(147, 51, 234, 0.3);
+  }
+}
+
+.room-share-bounce {
+  animation: roomShareBounce 1.5s ease-in-out infinite;
+}
+
+@keyframes roomShareBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.room-share-sparkle {
+  animation: roomShareSparkle 1s ease-in-out infinite;
+}
+
+@keyframes roomShareSparkle {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.room-share-gradient {
+  background: linear-gradient(45deg, #f3e8ff, #fdf2f8, #f3e8ff);
+  background-size: 200% 200%;
+  animation: roomShareGradient 3s ease infinite;
+}
+
+@keyframes roomShareGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
