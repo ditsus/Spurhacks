@@ -87,34 +87,49 @@ const SearchResults = () => {
       result && result.title && result.link
     );
 
+    // Handle case where no valid results are found
+    if (validResults.length === 0) {
+      setLoadingMessage("No properties found matching your criteria");
+      setTimeout(() => {
+        setIsStreaming(false);
+        setLoading(false);
+      }, 1000);
+      return;
+    }
+
     // Process results in batches with delays for smooth animation
     const batchSize = 2; // Show 2 properties at a time
     const delay = 300; // 300ms between batches
 
     validResults.forEach((result: any, index: number) => {
       setTimeout(() => {
-        const processedResult = processResult(result, index);
-        
-        setResults(prev => {
-          const newResults = [...prev, processedResult];
-          setLoadingProgress(((index + 1) / validResults.length) * 100);
-          return newResults;
-        });
-        
-        setFilteredResults(prev => {
-          const newResults = [...prev, processedResult];
-          return newResults;
-        });
+        try {
+          const processedResult = processResult(result, index);
+          
+          setResults(prev => {
+            const newResults = [...prev, processedResult];
+            setLoadingProgress(((index + 1) / validResults.length) * 100);
+            return newResults;
+          });
+          
+          setFilteredResults(prev => {
+            const newResults = [...prev, processedResult];
+            return newResults;
+          });
 
-        // Update loading message
-        if (index < validResults.length - 1) {
-          setLoadingMessage(`Found ${index + 1} of ${validResults.length} properties...`);
-        } else {
-          setLoadingMessage("Finalizing results...");
-          setTimeout(() => {
-            setIsStreaming(false);
-            setLoading(false);
-          }, 800); // Slightly longer delay at the end
+          // Update loading message
+          if (index < validResults.length - 1) {
+            setLoadingMessage(`Found ${index + 1} of ${validResults.length} properties...`);
+          } else {
+            setLoadingMessage("Finalizing results...");
+            setTimeout(() => {
+              setIsStreaming(false);
+              setLoading(false);
+            }, 800); // Slightly longer delay at the end
+          }
+        } catch (error) {
+          console.error('Error processing result:', error);
+          // Continue with next result even if one fails
         }
       }, (index * delay) / batchSize);
     });
@@ -164,10 +179,19 @@ const SearchResults = () => {
 
   useEffect(() => {
     const parseApiResponse = async () => {
+      // Set a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.warn('Search timeout reached, showing fallback');
+        setError("Search is taking longer than expected. Please try again.");
+        setLoading(false);
+        setIsStreaming(false);
+      }, 30000); // 30 second timeout
+
       try {
         setLoading(true);
         setLoadingProgress(0);
         setLoadingMessage("Checking for cached results...");
+        setError(null); // Clear any previous errors
         
         // Show skeleton loading immediately
         setIsStreaming(true);
@@ -177,6 +201,11 @@ const SearchResults = () => {
         const maxBudget = searchParams.get('maxBudget');
         const preferences = searchParams.get('preferences');
         const searchKey = searchParams.get('searchKey');
+
+        // Validate required parameters
+        if (!location || !preferences) {
+          throw new Error("Missing required search parameters");
+        }
 
         let data;
         let shouldMakeApiCall = true;
@@ -288,12 +317,17 @@ const SearchResults = () => {
             });
 
             if (!response.ok) {
-              throw new Error('Failed to fetch search results');
+              throw new Error(`Failed to fetch search results: ${response.status}`);
             }
 
             setLoadingMessage("Processing search results...");
             data = await response.json();
           }
+        }
+
+        // Validate that we have data
+        if (!data || !data.text) {
+          throw new Error("No data received from search service");
         }
 
         setLoadingMessage("Analyzing properties...");
@@ -302,9 +336,19 @@ const SearchResults = () => {
         // Try to extract JSON from the response
         const jsonMatch = data.text.match(/\[[\s\S]*\]/);
         if (jsonMatch) {
-          parsedResults = JSON.parse(jsonMatch[0]);
+          try {
+            parsedResults = JSON.parse(jsonMatch[0]);
+          } catch (parseError) {
+            console.error('Error parsing JSON:', parseError);
+            throw new Error("Invalid response format from search service");
+          }
         } else {
-          throw new Error("Could not parse API response");
+          throw new Error("Could not parse API response - no valid JSON array found");
+        }
+
+        // Validate that we have results
+        if (!Array.isArray(parsedResults) || parsedResults.length === 0) {
+          throw new Error("No properties found matching your criteria");
         }
 
         // Cache the results if we have a searchKey
@@ -332,11 +376,17 @@ const SearchResults = () => {
           }));
         }
         
+        // Clear timeout on success
+        clearTimeout(timeoutId);
+        
       } catch (err) {
         console.error("Error parsing API response:", err);
-        setError("Failed to parse search results");
+        setError(err instanceof Error ? err.message : "Failed to parse search results");
         setLoading(false);
         setIsStreaming(false);
+        setResults([]);
+        setFilteredResults([]);
+        clearTimeout(timeoutId);
       }
 
       // Cleanup function to remove old search data (older than 1 hour)
@@ -600,7 +650,7 @@ const SearchResults = () => {
           <p className="text-sm text-gray-500">
             {usingCache 
               ? 'Retrieving your previous search results...' 
-              : `Analyzing housing options in ${location}...`
+              : `Analyzing housing options in ${searchParams.get('location') || 'your area'}...`
             }
           </p>
           
@@ -620,13 +670,61 @@ const SearchResults = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-red-600 mb-2">Search Error</h2>
-          <p className="text-gray-500 mb-4">{error}</p>
-          <Button onClick={() => navigate('/')} className="bg-blue-600 hover:bg-blue-700">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Search
-          </Button>
+        <div className="text-center max-w-md mx-auto">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <h2 className="text-xl font-semibold mb-2">Search Error</h2>
+            <p className="text-sm">{error}</p>
+          </div>
+          <div className="space-y-4">
+            <Button 
+              onClick={() => navigate('/')} 
+              className="bg-blue-600 hover:bg-blue-700 w-full"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Search
+            </Button>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+              className="w-full"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle case where no results are found after loading
+  if (!loading && filteredResults.length === 0 && results.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto">
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mb-6">
+            <h2 className="text-xl font-semibold mb-2">No Properties Found</h2>
+            <p className="text-sm">
+              We couldn't find any properties matching your criteria. Try adjusting your search parameters.
+            </p>
+          </div>
+          <div className="space-y-4">
+            <Button 
+              onClick={() => navigate('/')} 
+              className="bg-blue-600 hover:bg-blue-700 w-full"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Search
+            </Button>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+              className="w-full"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -695,12 +793,31 @@ const SearchResults = () => {
 
       {/* Results */}
       <div className="container mx-auto px-4 py-8">
-        {currentResults.length === 0 ? (
+        {/* Safety check - if we somehow have no results and no loading/error state */}
+        {!loading && !error && filteredResults.length === 0 && results.length === 0 && (
+          <div className="text-center py-12">
+            <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mb-6 max-w-md mx-auto">
+              <h3 className="text-lg font-semibold mb-2">No Results Found</h3>
+              <p className="text-sm">
+                We couldn't find any properties matching your criteria. Try adjusting your search parameters.
+              </p>
+            </div>
+            <Button 
+              onClick={() => navigate('/')} 
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Search
+            </Button>
+          </div>
+        )}
+
+        {currentResults.length === 0 && filteredResults.length > 0 ? (
           <div className="text-center py-12">
             <h3 className="text-lg font-semibold text-gray-700 mb-2">No properties found</h3>
             <p className="text-gray-500">Try adjusting your filters to see more results.</p>
           </div>
-        ) : (
+        ) : currentResults.length > 0 && (
           <>
             {/* Loading indicator for streaming */}
             {isStreaming && (
