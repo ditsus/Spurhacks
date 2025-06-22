@@ -7,7 +7,7 @@ import cors from 'cors';
 
 import { connectDB } from "./config/db.js";
 dotenv.config();
-// await connectDB();
+await connectDB();
 
 
 
