@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { ArrowLeft, MapPin, DollarSign, Bed, Bath, Star, Heart, Building, Home, Sparkles } from "lucide-react";
+import { ArrowLeft, MapPin, DollarSign, Bed, Bath, Star, Heart, Building, Home, Sparkles, RefreshCw } from "lucide-react";
 import SearchFilters from "@/components/SearchFilters";
+import { cleanupOldSearches } from "@/lib/utils";
 
 interface HousingResult {
   id: string;
@@ -43,6 +44,7 @@ const SearchResults = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [usingCache, setUsingCache] = useState(false);
 
   const [filters, setFilters] = useState({
     priceRange: [0, 2000],
@@ -62,27 +64,65 @@ const SearchResults = () => {
         const minBudget = searchParams.get('minBudget');
         const maxBudget = searchParams.get('maxBudget');
         const preferences = searchParams.get('preferences');
+        const searchKey = searchParams.get('searchKey');
 
-        const response = await fetch('https://spurhacks-ashj.vercel.app/api/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            location,
-            budget: {
-              min: minBudget ? parseInt(minBudget) : undefined,
-              max: maxBudget ? parseInt(maxBudget) : undefined,
-            },
-            preferences,
-          }),
-        });
+        let data;
+        let shouldMakeApiCall = true;
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch search results');
+        // Check if we have cached results in localStorage
+        if (searchKey) {
+          const cachedData = localStorage.getItem(searchKey);
+          if (cachedData) {
+            try {
+              const parsed = JSON.parse(cachedData);
+              const cacheAge = Date.now() - parsed.timestamp;
+              const maxCacheAge = 30 * 60 * 1000; // 30 minutes
+              
+              // Use cached data if it's less than 30 minutes old
+              if (cacheAge < maxCacheAge) {
+                data = { text: parsed.results };
+                shouldMakeApiCall = false;
+                console.log('Using cached search results');
+                setUsingCache(true);
+              } else {
+                // Remove expired cache
+                localStorage.removeItem(searchKey);
+              }
+            } catch (err) {
+              console.error('Error parsing cached data:', err);
+              localStorage.removeItem(searchKey);
+            }
+          } else {
+            // No searchKey provided (e.g., bookmarked URL), will make new API call
+            console.log('No searchKey found, will make new API call');
+          }
         }
 
-        const data = await response.json();
+        // Make API call if no valid cache exists
+        if (shouldMakeApiCall) {
+          console.log('Making new API call for search results');
+          const response = await fetch('https://spurhacks-ashj.vercel.app/api/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              location,
+              budget: {
+                min: minBudget ? parseInt(minBudget) : undefined,
+                max: maxBudget ? parseInt(maxBudget) : undefined,
+              },
+              preferences,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch search results');
+          }
+
+          data = await response.json();
+        }
+
         let parsedResults;
 
         // Try to extract JSON from the response
@@ -159,6 +199,9 @@ const SearchResults = () => {
     };
 
     parseApiResponse();
+
+    // Cleanup function to remove old search data (older than 1 hour)
+    cleanupOldSearches();
   }, [searchParams]);
 
   // Apply filters when filters change
@@ -247,6 +290,118 @@ const SearchResults = () => {
     setFavorites(newFavorites);
   };
 
+  const refreshResults = async () => {
+    const location = searchParams.get('location');
+    const minBudget = searchParams.get('minBudget');
+    const maxBudget = searchParams.get('maxBudget');
+    const preferences = searchParams.get('preferences');
+    const searchKey = searchParams.get('searchKey');
+
+    if (!location || !preferences) {
+      setError("Missing search parameters for refresh");
+      return;
+    }
+
+    setLoading(true);
+    setUsingCache(false);
+    setError(null);
+
+    try {
+      const response = await fetch('https://spurhacks-ashj.vercel.app/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          location,
+          budget: {
+            min: minBudget ? parseInt(minBudget) : undefined,
+            max: maxBudget ? parseInt(maxBudget) : undefined,
+          },
+          preferences,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch fresh search results');
+      }
+
+      const data = await response.json();
+      
+      // Update the cache with fresh data
+      if (searchKey) {
+        localStorage.setItem(searchKey, JSON.stringify({
+          results: data.text,
+          timestamp: Date.now(),
+          searchParams: {
+            location,
+            minBudget: minBudget ? parseInt(minBudget) : undefined,
+            maxBudget: maxBudget ? parseInt(maxBudget) : undefined,
+            preferences
+          }
+        }));
+      }
+
+      // Parse and set the new results
+      const jsonMatch = data.text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const parsedResults = JSON.parse(jsonMatch[0]);
+        const validResults = parsedResults.filter((result: any) => 
+          result && result.title && result.link
+        ).map((result: any, index: number) => {
+          const title = result.title.toLowerCase();
+          let propertyType = 'apartment';
+          if (title.includes('house') || title.includes('home')) {
+            propertyType = 'house';
+          } else if (title.includes('studio')) {
+            propertyType = 'studio';
+          } else if (title.includes('shared') || title.includes('room')) {
+            propertyType = 'shared';
+          }
+
+          const aiScores = {
+            transit: Math.floor(Math.random() * 4) + 7,
+            quietness: Math.floor(Math.random() * 4) + 6,
+            location: Math.floor(Math.random() * 4) + 7,
+            safety: Math.floor(Math.random() * 3) + 7,
+            value: Math.floor(Math.random() * 4) + 6,
+          };
+
+          return {
+            id: result.id || `result-${index}`,
+            title: result.title || "Unknown Property",
+            link: result.link || "#",
+            justification: result.justification || "",
+            Price: result.Price || "N/A",
+            "Min price": result["Min price"] || "N/A",
+            "Max price": result["Max price"] || "N/A",
+            "Length of stay": result["Length of stay"] || "Unknown",
+            Location: result.Location || [0, 0],
+            Beds: result.Beds || "N/A",
+            Baths: result.Baths || "N/A",
+            "Available from": result["Available from"] || "Unknown",
+            Amenities: Array.isArray(result.Amenities) ? result.Amenities : [],
+            "Reason for recommendation": result["Reason for recommendation"] || "",
+            Images: result.Images || [],
+            postalCode: `K${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))} ${Math.floor(Math.random() * 9) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 9) + 1}`,
+            propertyType,
+            aiScores
+          };
+        });
+
+        setResults(validResults);
+        setFilteredResults(validResults);
+      } else {
+        throw new Error("Could not parse fresh API response");
+      }
+    } catch (err) {
+      console.error("Error refreshing results:", err);
+      setError("Failed to refresh search results");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const totalPages = Math.ceil(filteredResults.length / resultsPerPage);
   const startIndex = (currentPage - 1) * resultsPerPage;
   const endIndex = startIndex + resultsPerPage;
@@ -276,8 +431,15 @@ const SearchResults = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Processing Search Results</h2>
-          <p className="text-gray-500">Analyzing housing options in {location}...</p>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">
+            {usingCache ? 'Loading Cached Results' : 'Processing Search Results'}
+          </h2>
+          <p className="text-gray-500">
+            {usingCache 
+              ? 'Retrieving your previous search results...' 
+              : `Analyzing housing options in ${location}...`
+            }
+          </p>
         </div>
       </div>
     );
@@ -313,6 +475,17 @@ const SearchResults = () => {
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Search</span>
               </Button>
+              {usingCache && (
+                <Button
+                  variant="outline"
+                  onClick={refreshResults}
+                  disabled={loading}
+                  className="flex items-center space-x-2 btn-animate"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  <span>Refresh Results</span>
+                </Button>
+              )}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center">
                   <Sparkles className="w-6 h-6 mr-2 text-blue-600" />
@@ -334,7 +507,12 @@ const SearchResults = () => {
               <p className="text-sm text-gray-600">
                 {filteredResults.length} properties found
               </p>
-              <p className="text-xs text-blue-600 font-medium">Powered by Housely</p>
+              <p className="text-xs text-blue-600 font-medium">
+                Powered by Housely
+                {usingCache && (
+                  <span className="ml-2 text-green-600">• Cached</span>
+                )}
+              </p>
             </div>
           </div>
         </div>

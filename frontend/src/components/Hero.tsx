@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
+import { createSearchUrl } from "@/lib/utils";
 
 interface HeroProps {
   searchQuery: string;
@@ -73,17 +74,30 @@ const Hero = ({ searchQuery, setSearchQuery }: HeroProps) => {
 
       const data = await response.json();
       
-      // Create search parameters for the results page
-      const searchParams = new URLSearchParams({
+      // Store the API response in localStorage with a unique key
+      const searchKey = `search_${Date.now()}`;
+      localStorage.setItem(searchKey, JSON.stringify({
+        results: data.text,
+        timestamp: Date.now(),
+        searchParams: {
+          location: searchQuery,
+          minBudget: budgetRange[0],
+          maxBudget: budgetRange[1],
+          preferences: description
+        }
+      }));
+      
+      // Create clean search URL using utility function
+      const searchUrl = createSearchUrl({
         location: searchQuery,
-        minBudget: budgetRange[0].toString(),
-        maxBudget: budgetRange[1].toString(),
+        minBudget: budgetRange[0],
+        maxBudget: budgetRange[1],
         preferences: description,
-        apiResponse: data.text // Pass the API response as a parameter
+        searchKey: searchKey
       });
 
-      // Redirect to search results page with parameters
-      navigate(`/search-results?${searchParams.toString()}`);
+      // Redirect to search results page with clean URL
+      navigate(searchUrl);
     } catch (err) {
       console.error("Search error:", err);
       setError("An error occurred while processing your search. Please try again.");
