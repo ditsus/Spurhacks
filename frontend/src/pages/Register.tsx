@@ -3,37 +3,39 @@ import { Home } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const Registration = () => {
-  /* ─────────  UI state  ───────── */
-  const [isVisible,       setIsVisible]     = useState(false);
-  const [name,            setName]          = useState("");
-  const [email,           setEmail]         = useState("");
-  const [password,        setPassword]      = useState("");
-  const [confirmPassword, setConfirmPassword]=useState("");
-  const [error,           setError]         = useState<string | null>(null);
-  const [loading,         setLoading]       = useState(false);
+  /* ---------------- form & UI state ---------------- */
+  const [isVisible,       setIsVisible]       = useState(false);
+  const [name,            setName]            = useState("");
+  const [email,           setEmail]           = useState("");
+  const [password,        setPassword]        = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error,           setError]           = useState<string | null>(null);
+  const [loading,         setLoading]         = useState(false);
 
-  /* fade-in animation on mount */
+  /* intro animation */
   useEffect(() => {
     setIsVisible(false);
     const t = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(t);
   }, []);
 
-  /* ─────────  navigation helpers  ───────── */
-  const goHome  = () => (window.location.href = "/");
-  const goLogin = () => (window.location.href = "/login");
+  /* navigation helpers */
+  const goHome   = () => (window.location.href = "/");
+  const goLogin  = () => (window.location.href = "/login");
 
-  /* ─────────  submit handler  ───────── */
+  /* submit handler */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    /* client-side checks */
-    if (!name || !email || !password)
-      return setError("All fields are required");
-
-    if (password !== confirmPassword)
-      return setError("Passwords do not match");
+    if (!name || !email || !password) {
+      setError("Please complete all fields");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -45,12 +47,9 @@ const Registration = () => {
       const data = await res.json();
 
       if (res.status === 201) {
-        // registration succeeded (would only ever happen if you
-        // re-enable it on the backend)
-        alert("Registration successful! You can now log in.");
+        alert("Account created! You can now sign in.");
         goLogin();
       } else {
-        // 403 or any other error → show message
         setError(data.message || "Registration failed");
       }
     } catch {
@@ -60,16 +59,9 @@ const Registration = () => {
     }
   };
 
-  const handleSurvey = () => {
-    // Navigate to login page
-    // In a real app, this would use your router
-    // For example with React Router: navigate('/login')
-    window.location.href = '/housingsurvey';
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      {/* ─────────  header  ───────── */}
+      {/* ---------- header ---------- */}
       <div className={`sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 ease-out ${
         isVisible ? "translate-y-0 opacity-100" : "-translate-y-8 opacity-0"
       }`}>
@@ -90,17 +82,19 @@ const Registration = () => {
         </p>
       </div>
 
-      {/* ─────────  form  ───────── */}
+      {/* ---------- card ---------- */}
       <div className={`mt-8 sm:mx-auto sm:w-full sm:max-w-md transform transition-all duration-700 delay-500 ease-out ${
         isVisible ? "translate-y-0 opacity-100 scale-100" : "translate-y-8 opacity-0 scale-95"
       }`}>
         <form onSubmit={handleSubmit} className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 space-y-6">
 
-          {/* Full name */}
+          {/* name */}
           <div className={`transform transition-all duration-500 delay-600 ${
             isVisible ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
           }`}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Full name
+            </label>
             <input
               type="text"
               value={name}
@@ -110,23 +104,27 @@ const Registration = () => {
             />
           </div>
 
-          {/* Email */}
+          {/* email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email address</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email address
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200"
-              placeholder="Enter your email"
+              placeholder="you@example.com"
             />
           </div>
 
-          {/* Password */}
+          {/* password */}
           <div className={`transform transition-all duration-500 delay-800 ${
             isVisible ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
           }`}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
             <input
               type="password"
               value={password}
@@ -136,11 +134,13 @@ const Registration = () => {
             />
           </div>
 
-          {/* Confirm password */}
+          {/* confirm password */}
           <div className={`transform transition-all duration-500 delay-900 ${
             isVisible ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
           }`}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Confirm password
+            </label>
             <input
               type="password"
               value={confirmPassword}
@@ -150,35 +150,23 @@ const Registration = () => {
             />
           </div>
 
-            <div className={`flex items-center transform transition-all duration-500 delay-1000 ${
-              isVisible ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
-            }`}>
-              <input
-                type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-all duration-200"
-              />
-              <div className="ml-2 block text-sm text-gray-900">
-                I agree to the{" "}
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">
-                  Privacy Policy
-                </a>
-              </div>
-            </div>
+          {/* error */}
+          {error && <div className="text-center text-red-600 text-sm">{error}</div>}
 
-            <div className={`transform transition-all duration-500 delay-1100 ${
-              isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-            }`}>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 active:scale-95">
-                Create account
-              </Button>
-            </div>
+          {/* submit */}
+          <div className={`transform transition-all duration-500 delay-1100 ${
+            isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+          }`}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 active:scale-95"
+            >
+              {loading ? "Creating…" : "Create account"}
+            </Button>
           </div>
 
-          {/* Divider + links */}
+          {/* divider + login link */}
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -190,15 +178,23 @@ const Registration = () => {
             </div>
 
             <div className="mt-6">
-              <Button variant="outline" onClick={goLogin} className="w-full">
+              <Button
+                variant="outline"
+                onClick={goLogin}
+                className="w-full transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-gray-50"
+              >
                 Sign in to existing account
               </Button>
             </div>
           </div>
 
-          {/* Back home */}
+          {/* back home */}
           <div className="mt-6">
-            <Button variant="ghost" onClick={goHome} className="w-full">
+            <Button
+              variant="ghost"
+              onClick={goHome}
+              className="w-full transition-all duration-200 hover:scale-105 active:scale-95"
+            >
               ← Back to Home
             </Button>
           </div>
